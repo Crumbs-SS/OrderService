@@ -2,6 +2,7 @@ package com.crumbs.orderservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import javax.persistence.*;
@@ -21,12 +22,15 @@ public class Customer implements Serializable {
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_details_id")
-    @JsonBackReference
+    @JsonIgnoreProperties("customer")
     @ToString.Exclude
     private UserDetails userDetails;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<CartItem> cartItems;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+    private List<Order> orders;
 }
 

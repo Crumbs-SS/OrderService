@@ -1,5 +1,6 @@
 package com.crumbs.orderservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class Order {
     private Long id;
 
     @ManyToOne
+    @JsonIgnoreProperties("menuItems")
     private Restaurant restaurant;
 
     @ManyToOne
@@ -28,6 +30,11 @@ public class Order {
 
     private Boolean fulfilled;
 
+    @ManyToOne
+    @JsonIgnoreProperties("orders")
+    private Customer customer;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("order")
     private List<FoodOrder> foodOrders = new ArrayList<>();
 }

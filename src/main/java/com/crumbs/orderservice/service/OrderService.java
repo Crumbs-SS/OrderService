@@ -1,14 +1,9 @@
 package com.crumbs.orderservice.service;
 
 import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.entity.FoodOrder;
-import com.crumbs.orderservice.entity.Order;
-import com.crumbs.orderservice.entity.Restaurant;
+import com.crumbs.orderservice.entity.*;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
-import com.crumbs.orderservice.repository.FoodOrderRepository;
-import com.crumbs.orderservice.repository.MenuItemRepository;
-import com.crumbs.orderservice.repository.OrderRepository;
-import com.crumbs.orderservice.repository.RestaurantRepository;
+import com.crumbs.orderservice.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,18 +14,17 @@ import java.util.*;
 @Transactional(rollbackFor = { Exception.class })
 public class OrderService {
 
-    @Autowired
-    OrderRepository orderRepository;
-    @Autowired
-    FoodOrderRepository foodOrderRepository;
-    @Autowired
-    MenuItemRepository menuItemRepository;
-    @Autowired
-    RestaurantRepository restaurantRepository;
-    @Autowired
-    FoodOrderMapper foodOrderMapper;
+    @Autowired OrderRepository orderRepository;
+    @Autowired FoodOrderRepository foodOrderRepository;
+    @Autowired MenuItemRepository menuItemRepository;
+    @Autowired RestaurantRepository restaurantRepository;
+    @Autowired FoodOrderMapper foodOrderMapper;
+    @Autowired UserDetailsRepository userDetailsRepository;
 
-    public void createOrder(List<CartItemDTO> cartItems){
+    public void createOrder(Integer userId, List<CartItemDTO> cartItems){
+
+        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+
         List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartItems);
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
 
@@ -40,14 +34,25 @@ public class OrderService {
 
             Order order = Order.builder()
                     .restaurant(restaurant)
+                    .customer(user.getCustomer())
                     .fulfilled(false)
                     .foodOrders(foodOrdersList)
                     .build();
 
             orderRepository.save(order);
+
+            foodOrdersList.forEach(foodOrder -> {
+                foodOrder.setOrder(order);
+                foodOrderRepository.save(foodOrder);
+            });
+
         });
     }
 
+    public List<Order> getOrders(Integer userId){
+        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+        return user.getCustomer().getOrders();
+    }
 
     // Key, Value pair object
     // Expected: RestaurantId: List<FoodOrder>

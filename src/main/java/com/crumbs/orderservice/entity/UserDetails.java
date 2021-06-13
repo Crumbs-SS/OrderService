@@ -22,7 +22,6 @@ public class UserDetails implements Serializable {
     private Integer id;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "userDetails")
-    @JsonManagedReference
     private Customer customer;
 
     @Column(nullable = false)
@@ -36,7 +35,7 @@ public class UserDetails implements Serializable {
 
     @Column(nullable = false)
     @JsonIgnore
-    @Size(min = 60, max = 60)
+//    @Size(min = 60, max = 60)
     private String password;
 
     @Column(unique = true, nullable = false)

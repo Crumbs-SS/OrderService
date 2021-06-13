@@ -1,13 +1,7 @@
 package com.crumbs.orderservice;
 
-import com.crumbs.orderservice.entity.Category;
-import com.crumbs.orderservice.entity.MenuItem;
-import com.crumbs.orderservice.entity.Restaurant;
-import com.crumbs.orderservice.entity.RestaurantCategory;
-import com.crumbs.orderservice.repository.CategoryRepository;
-import com.crumbs.orderservice.repository.MenuItemRepository;
-import com.crumbs.orderservice.repository.RestaurantCategoryRepository;
-import com.crumbs.orderservice.repository.RestaurantRepository;
+import com.crumbs.orderservice.entity.*;
+import com.crumbs.orderservice.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -25,6 +19,7 @@ public class SeedUtil implements ApplicationRunner {
     @Autowired RestaurantRepository restaurantRepository;
     @Autowired MenuItemRepository menuItemRepository;
     @Autowired RestaurantCategoryRepository restaurantCategoryRepository;
+    @Autowired UserDetailsRepository userDetailsRepository;
 
     private void makeRestaurants(){
         List<Category> categories = makeCategories();
@@ -81,8 +76,22 @@ public class SeedUtil implements ApplicationRunner {
         return Arrays.asList(burger, wings, chicken, chinese, seafood, vegan);
     }
 
+    private void makeCustomer(){
+        UserDetails user = UserDetails.builder()
+                .email("1@1.com")
+                .firstName("1")
+                .lastName("1")
+                .username("hehe")
+                .password("hehehe")
+                .build();
+        Customer customer = Customer.builder().userDetails(user).build();
+        user.setCustomer(customer);
+        userDetailsRepository.save(user);
+    }
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         makeRestaurants();
+        makeCustomer();
     }
 }
