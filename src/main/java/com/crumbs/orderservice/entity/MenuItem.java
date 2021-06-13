@@ -29,6 +29,10 @@ public class MenuItem {
     @JsonIgnore
     private List<FoodOrder> foodOrders;
 
+    @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<CartItem> cartItems;
+
     private String name;
     private Float price;
     private String description;

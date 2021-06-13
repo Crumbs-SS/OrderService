@@ -4,6 +4,7 @@ import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.entity.FoodOrder;
 import com.crumbs.orderservice.entity.Order;
 import com.crumbs.orderservice.entity.Restaurant;
+import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.repository.FoodOrderRepository;
 import com.crumbs.orderservice.repository.MenuItemRepository;
 import com.crumbs.orderservice.repository.OrderRepository;
@@ -26,9 +27,11 @@ public class OrderService {
     MenuItemRepository menuItemRepository;
     @Autowired
     RestaurantRepository restaurantRepository;
+    @Autowired
+    FoodOrderMapper foodOrderMapper;
 
     public void createOrder(List<CartItemDTO> cartItems){
-        List<FoodOrder> foodOrders = getFoodOrders(cartItems);
+        List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartItems);
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
 
         hashMap.forEach((restaurantId, foodOrdersList) -> {
@@ -42,21 +45,9 @@ public class OrderService {
                     .build();
 
             orderRepository.save(order);
-            System.out.println("Order has been created!");
         });
     }
 
-    // Convert cartItems to FoodOrders
-    private List<FoodOrder> getFoodOrders(List<CartItemDTO> cartItems){
-        return cartItems.stream().map(cartItem -> {
-            FoodOrder foodOrder = FoodOrder.builder()
-                    .preferences(cartItem.getPreferences())
-                    .menuItem(menuItemRepository.findById(cartItem.getId()).orElseThrow())
-                    .build();
-
-            return foodOrderRepository.save(foodOrder);
-        }).toList();
-    }
 
     // Key, Value pair object
     // Expected: RestaurantId: List<FoodOrder>
