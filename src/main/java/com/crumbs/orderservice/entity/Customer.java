@@ -27,7 +27,6 @@ public class Customer implements Serializable {
     private UserDetails userDetails;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
-    @JsonIgnore
     private List<CartItem> cartItems;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)

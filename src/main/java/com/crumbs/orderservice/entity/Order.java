@@ -29,6 +29,10 @@ public class Order {
     private Location location;
 
     private Boolean fulfilled;
+    private String preferences;
+    private String phone;
+
+    private String address;
 
     @ManyToOne
     @JsonIgnoreProperties("orders")

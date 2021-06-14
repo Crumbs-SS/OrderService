@@ -1,6 +1,8 @@
 package com.crumbs.orderservice.service;
 
 import com.crumbs.orderservice.DTO.CartItemDTO;
+import com.crumbs.orderservice.DTO.OrderDTO;
+import com.crumbs.orderservice.DTO.OrdersDTO;
 import com.crumbs.orderservice.entity.*;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.repository.*;
@@ -21,10 +23,11 @@ public class OrderService {
     @Autowired FoodOrderMapper foodOrderMapper;
     @Autowired UserDetailsRepository userDetailsRepository;
 
-    public void createOrder(Integer userId, List<CartItemDTO> cartItems){
+    public List<Order> createOrder(Integer userId, OrderDTO orderDTO){
 
+        List<Order> ordersCreated = new ArrayList<>();
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
-
+        List<CartItemDTO> cartItems = orderDTO.getCartItems();
         List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartItems);
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
 
@@ -37,21 +40,36 @@ public class OrderService {
                     .customer(user.getCustomer())
                     .fulfilled(false)
                     .foodOrders(foodOrdersList)
+                    .preferences(orderDTO.getPreferences())
+                    .phone(orderDTO.getPhone())
+                    .address(orderDTO.getAddress())
                     .build();
 
             orderRepository.save(order);
+            ordersCreated.add(order);
 
             foodOrdersList.forEach(foodOrder -> {
                 foodOrder.setOrder(order);
                 foodOrderRepository.save(foodOrder);
             });
-
         });
+
+        return ordersCreated;
     }
 
-    public List<Order> getOrders(Integer userId){
+    public OrdersDTO getOrders(Integer userId){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
-        return user.getCustomer().getOrders();
+
+        return OrdersDTO.builder()
+                .orders(user.getCustomer().getOrders())
+                .activeOrders(getOrders(userId, false))
+                .inactiveOrders(getOrders(userId, true))
+                .build();
+    }
+
+    private List<Order> getOrders(Integer userId, Boolean fulfilled){
+        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+        return orderRepository.findOrderByFulfilledAndCustomer(fulfilled, user.getCustomer());
     }
 
     // Key, Value pair object

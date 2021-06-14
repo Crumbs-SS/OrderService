@@ -23,5 +23,8 @@ public class CartItem {
     private MenuItem menuItem;
 
     @ManyToOne
+    @JsonIgnoreProperties({"cartItems", "orders"})
     private Customer customer;
+
+    private String preferences;
 }

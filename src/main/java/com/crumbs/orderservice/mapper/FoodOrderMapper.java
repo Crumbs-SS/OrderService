@@ -17,7 +17,7 @@ public class FoodOrderMapper {
     public FoodOrder getMenuItem(CartItemDTO cartItem){
         return FoodOrder.builder()
                 .preferences(cartItem.getPreferences())
-                .menuItem(menuItemRepository.findById(cartItem.getId()).orElseThrow())
+                .menuItem(menuItemRepository.findById(cartItem.getMenuItem().getId()).orElseThrow())
                 .build();
     }
 
