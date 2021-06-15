@@ -1,8 +1,6 @@
 package com.crumbs.orderservice.DTO;
 
 import com.crumbs.orderservice.entity.MenuItem;
-import com.crumbs.orderservice.entity.Restaurant;
-import com.crumbs.orderservice.entity.UserDetails;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
