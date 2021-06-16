@@ -28,7 +28,7 @@ public class SeedUtil implements ApplicationRunner {
                     .name("Restaurant-" + i)
                     .build();
 
-            restaurantRepository.save(restaurant);
+            restaurant = restaurantRepository.save(restaurant);
             makeMenuItems(restaurant);
 
             for (int k = 0; k < 3; k++){
