@@ -1,5 +1,6 @@
 package com.crumbs.orderservice;
 
+import com.crumbs.lib.repository.UserDetailsRepository;
 import com.crumbs.orderservice.entity.*;
 import com.crumbs.orderservice.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,13 @@ public class SeedUtil implements ApplicationRunner {
     @Autowired RestaurantRepository restaurantRepository;
     @Autowired MenuItemRepository menuItemRepository;
     @Autowired RestaurantCategoryRepository restaurantCategoryRepository;
-    @Autowired UserDetailsRepository userDetailsRepository;
+
+    private final UserDetailsRepository userDetailsRepository;
+
+    @Autowired
+    SeedUtil(UserDetailsRepository userDetailsRepository){
+        this.userDetailsRepository = userDetailsRepository;
+    }
 
     private void makeRestaurants(){
         List<Category> categories = makeCategories();

@@ -1,12 +1,12 @@
 package com.crumbs.orderservice.service;
 
 
+import com.crumbs.lib.entity.UserDetails;
+import com.crumbs.lib.repository.UserDetailsRepository;
 import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.entity.CartItem;
-import com.crumbs.orderservice.entity.UserDetails;
 import com.crumbs.orderservice.mapper.CartItemMapper;
 import com.crumbs.orderservice.repository.CartItemRepository;
-import com.crumbs.orderservice.repository.UserDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,8 +20,7 @@ public class CartService {
 
     @Autowired
     CartItemRepository cartItemRepository;
-    @Autowired
-    UserDetailsRepository userDetailsRepository;
+    @Autowired UserDetailsRepository userDetailsRepository;
     @Autowired
     CartItemMapper cartItemMapper;
 

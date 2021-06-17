@@ -1,5 +1,6 @@
 package com.crumbs.orderservice.entity;
 
+import com.crumbs.lib.entity.Customer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

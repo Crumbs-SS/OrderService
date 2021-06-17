@@ -1,6 +1,5 @@
 package com.crumbs.orderservice.repository;
 
-import com.crumbs.orderservice.entity.Customer;
 import com.crumbs.orderservice.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

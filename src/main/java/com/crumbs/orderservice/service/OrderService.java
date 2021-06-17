@@ -1,5 +1,6 @@
 package com.crumbs.orderservice.service;
 
+import com.crumbs.lib.repository.UserDetailsRepository;
 import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
