@@ -1,5 +1,7 @@
 package com.crumbs.orderservice;
 
+import com.crumbs.lib.entity.Customer;
+import com.crumbs.lib.entity.UserDetails;
 import com.crumbs.lib.repository.UserDetailsRepository;
 import com.crumbs.orderservice.entity.*;
 import com.crumbs.orderservice.repository.*;
