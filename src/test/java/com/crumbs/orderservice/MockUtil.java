@@ -22,6 +22,7 @@ public class MockUtil {
     public static Customer getCustomer(){
         return Customer.builder()
                 .id(-1L)
+                .cartItems(new ArrayList<>(List.of(getCartItem())))
                 .orders(List.of(getOrder()))
                 .build();
     }
@@ -29,6 +30,7 @@ public class MockUtil {
     public static CartItem getCartItem(){
         return CartItem.builder()
                 .id(-1L)
+                .menuItem(getMenuItem())
                 .build();
     }
 
