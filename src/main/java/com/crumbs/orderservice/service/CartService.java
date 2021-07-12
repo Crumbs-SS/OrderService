@@ -1,12 +1,12 @@
 package com.crumbs.orderservice.service;
 
 
+import com.crumbs.lib.entity.CartItem;
+import com.crumbs.lib.entity.UserDetails;
+import com.crumbs.lib.repository.CartItemRepository;
+import com.crumbs.lib.repository.UserDetailsRepository;
 import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.entity.CartItem;
-import com.crumbs.orderservice.entity.UserDetails;
 import com.crumbs.orderservice.mapper.CartItemMapper;
-import com.crumbs.orderservice.repository.CartItemRepository;
-import com.crumbs.orderservice.repository.UserDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,15 +18,23 @@ import java.util.List;
 @Transactional(rollbackFor = {Exception.class})
 public class CartService {
 
-    @Autowired
-    CartItemRepository cartItemRepository;
-    @Autowired
-    UserDetailsRepository userDetailsRepository;
-    @Autowired
-    CartItemMapper cartItemMapper;
+    private final CartItemRepository cartItemRepository;
+    private final UserDetailsRepository userDetailsRepository;
+    private final CartItemMapper cartItemMapper;
+
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    CartService(
+        CartItemRepository cartItemRepository,
+        UserDetailsRepository userDetailsRepository,
+        CartItemMapper cartItemMapper){
+
+        this.cartItemRepository = cartItemRepository;
+        this.userDetailsRepository = userDetailsRepository;
+        this.cartItemMapper = cartItemMapper;
+    }
 
 
-    public List<CartItem> createCartItem(Integer userId, CartItemDTO cartItemDTO){
+    public List<CartItem> createCartItem(Long userId, CartItemDTO cartItemDTO){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         CartItem cartItem = cartItemMapper.getCartItem(cartItemDTO, user.getCustomer());
 
@@ -34,23 +42,24 @@ public class CartService {
         return getCartItems(userId);
     }
 
-    public List<CartItem> getCartItems(Integer userId){
+    public List<CartItem> getCartItems(Long userId){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
-
         return user.getCustomer().getCartItems();
     }
 
-    public void deleteCart(Integer userId){
+
+    public void deleteCart(Long userId){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
 
         user.getCustomer()
                 .getCartItems()
-                .forEach(cartItem -> cartItemRepository.delete(cartItem));
+                .forEach(cartItemRepository::delete);
+
         user.getCustomer().getCartItems().clear();
         userDetailsRepository.save(user);
     }
 
-    public List<CartItem> removeItem(Integer userId, Long menuItemId){
+    public List<CartItem> removeItem(Long userId, Long menuItemId){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         List<CartItem> cartItems = new ArrayList<>();
 
@@ -59,9 +68,9 @@ public class CartService {
                 .forEach(cartItem -> {
                     if(cartItem.getMenuItem().id.equals(menuItemId))
                         cartItemRepository.delete(cartItem);
-                    else{
+                    else
                         cartItems.add(cartItem);
-                    }
+
                 });
 
         user.getCustomer().setCartItems(cartItems);

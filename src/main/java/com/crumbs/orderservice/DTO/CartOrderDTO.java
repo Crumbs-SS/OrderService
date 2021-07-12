@@ -1,25 +1,29 @@
 package com.crumbs.orderservice.DTO;
 
-import com.crumbs.lib.entity.MenuItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-
+import java.sql.Timestamp;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartItemDTO {
+public class CartOrderDTO {
 
     @NotNull
-    private Long id;
-
-    private MenuItem menuItem;
+    @NotEmpty
+    private String phone;
 
     @NotNull
+    @NotEmpty
+    private String address;
+
     private String preferences;
+    private List<CartItemDTO> cartItems;
 }

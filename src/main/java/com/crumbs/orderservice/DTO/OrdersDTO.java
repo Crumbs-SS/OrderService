@@ -1,6 +1,6 @@
 package com.crumbs.orderservice.DTO;
 
-import com.crumbs.orderservice.entity.Order;
+import com.crumbs.lib.entity.Order;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

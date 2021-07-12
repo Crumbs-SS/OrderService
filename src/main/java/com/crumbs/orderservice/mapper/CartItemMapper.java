@@ -1,9 +1,9 @@
 package com.crumbs.orderservice.mapper;
 
+import com.crumbs.lib.entity.CartItem;
+import com.crumbs.lib.entity.Customer;
+import com.crumbs.lib.repository.MenuItemRepository;
 import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.entity.CartItem;
-import com.crumbs.orderservice.entity.Customer;
-import com.crumbs.orderservice.repository.MenuItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,18 +1,24 @@
 package com.crumbs.orderservice.mapper;
 
+import com.crumbs.lib.entity.FoodOrder;
+import com.crumbs.lib.repository.MenuItemRepository;
 import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.entity.FoodOrder;
-import com.crumbs.orderservice.repository.FoodOrderRepository;
-import com.crumbs.orderservice.repository.MenuItemRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class FoodOrderMapper {
-    @Autowired FoodOrderRepository foodOrderRepository;
-    @Autowired MenuItemRepository menuItemRepository;
+
+
+    private final MenuItemRepository menuItemRepository;
+
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    FoodOrderMapper(MenuItemRepository menuItemRepository){
+        this.menuItemRepository = menuItemRepository;
+    }
 
     public FoodOrder getMenuItem(CartItemDTO cartItem){
         return FoodOrder.builder()
@@ -23,7 +29,7 @@ public class FoodOrderMapper {
 
     public List<FoodOrder> getFoodOrders(List<CartItemDTO> cartItems){
         return cartItems.stream()
-                .map(cartItem -> foodOrderRepository.save(getMenuItem(cartItem)))
-                .toList();
+                .map(this::getMenuItem)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }
