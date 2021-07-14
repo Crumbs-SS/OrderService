@@ -5,6 +5,7 @@ import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.DTO.CartOrderDTO;
 import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
+import org.springframework.data.domain.PageImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +85,7 @@ public class MockUtil {
 
     public static OrdersDTO getOrdersDTO(){
         return OrdersDTO.builder()
-                .orders(List.of(getOrder()))
+                .activeOrders(new PageImpl<>(List.of(getOrder())))
                 .build();
     }
 
