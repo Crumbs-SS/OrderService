@@ -8,6 +8,7 @@ import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
 import com.crumbs.orderservice.service.CartService;
 import com.crumbs.orderservice.service.OrderService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,8 +30,12 @@ public class MainController {
     }
 
     @GetMapping("customers/{id}/orders")
-    public ResponseEntity<Object> getOrders(@PathVariable Long id) {
-        OrdersDTO orders = orderService.getOrders(id);
+    public ResponseEntity<Object> getOrders(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") Integer page
+    ){
+        PageRequest pageRequest = PageRequest.of(page, 3);
+        OrdersDTO orders = orderService.getOrders(id, pageRequest);
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 

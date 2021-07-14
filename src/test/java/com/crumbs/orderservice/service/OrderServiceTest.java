@@ -16,6 +16,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,9 +79,13 @@ class OrderServiceTest {
     void getOrders() {
         UserDetails userDetails = MockUtil.getUserDetails();
         OrdersDTO ordersDTO = MockUtil.getOrdersDTO();
+        PageRequest pageRequest = PageRequest.of(0, 4);
 
-        assertEquals(orderService.getOrders(userDetails.getId()).getOrders().size(),
-                ordersDTO.getOrders().size());
+        Mockito.when(orderRepository.findOrderByOrderStatusAndCustomer(any(OrderStatus.class),
+                any(Customer.class), any(PageRequest.class))).thenReturn(ordersDTO.getActiveOrders());
+
+        assertEquals(orderService.getOrders(userDetails.getId(), pageRequest).getActiveOrders().getNumberOfElements(),
+                ordersDTO.getActiveOrders().getNumberOfElements());
     }
 
     @Test

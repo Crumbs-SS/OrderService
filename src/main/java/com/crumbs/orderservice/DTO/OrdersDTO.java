@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -13,7 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class OrdersDTO {
-    private List<Order> orders;
-    private List<Order> activeOrders;
-    private List<Order> inactiveOrders;
+    private Page<Order> activeOrders;
+    private Page<Order> inactiveOrders;
 }

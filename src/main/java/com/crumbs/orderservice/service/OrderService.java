@@ -8,6 +8,9 @@ import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,20 +89,17 @@ public class OrderService {
         return ordersCreated;
     }
 
-    public OrdersDTO getOrders(Long userId){
+    public OrdersDTO getOrders(Long userId, PageRequest pageRequest){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         return OrdersDTO.builder()
-                .orders(user.getCustomer().getOrders())
-                .activeOrders(getOrders(userId, "AWAITING_DRIVER"))
-                .inactiveOrders(getOrders(userId, "FULFILLED"))
+                .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
+                .inactiveOrders(getOrders(user, "FULFILLED", pageRequest))
                 .build();
     }
 
-    private List<Order> getOrders(Long userId, String status){
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest){
         OrderStatus orderStatus = OrderStatus.builder().status(status).build();
-
-        return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer());
+        return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
     }
 
     // Expected: RestaurantId: List<FoodOrder>
