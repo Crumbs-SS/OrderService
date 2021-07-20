@@ -144,4 +144,9 @@ public class OrderService {
         return orderDTOMapper.getOrderDTO(order);
     }
 
+    public void cancelOrder(Long order_id){
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        orderRepository.deleteById(order_id);
+    }
+
 }
