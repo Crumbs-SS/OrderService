@@ -28,6 +28,8 @@ public class OrderService {
     private final UserDetailsRepository userDetailsRepository;
     private final LocationRepository locationRepository;
     private final OrderDTOMapper orderDTOMapper;
+    private final DriverRepository driverRepository;
+    private final OrderStatusRepository orderStatusRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -36,7 +38,9 @@ public class OrderService {
             FoodOrderMapper foodOrderMapper,
             LocationRepository locationRepository,
             UserDetailsRepository userDetailsRepository,
-            OrderDTOMapper orderDTOMapper){
+            OrderDTOMapper orderDTOMapper,
+            DriverRepository driverRepository,
+            OrderStatusRepository orderStatusRepository){
 
         this.orderRepository = orderRepository;
         this.foodOrderRepository = foodOrderRepository;
@@ -45,7 +49,8 @@ public class OrderService {
         this.userDetailsRepository = userDetailsRepository;
         this.locationRepository = locationRepository;
         this.orderDTOMapper = orderDTOMapper;
-
+        this.driverRepository = driverRepository;
+        this.orderStatusRepository = orderStatusRepository;
     }
 
     public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO){
@@ -147,6 +152,22 @@ public class OrderService {
     public void cancelOrder(Long order_id){
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         orderRepository.deleteById(order_id);
+    }
+
+    public List<Order> getAvailableOrders(){
+        OrderStatus orderStatus = OrderStatus.builder().status("AWAITING_DRIVER").build();
+        return orderRepository.findOrderByOrderStatus(orderStatus);
+    }
+    public Order acceptOrder(Long driver_id, Long order_id ){
+
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
+        OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
+
+        order.setDriver(driver);
+        order.setOrderStatus(orderStatus);
+
+        return orderRepository.save(order);
     }
 
 }
