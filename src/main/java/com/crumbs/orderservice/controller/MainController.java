@@ -39,12 +39,6 @@ public class MainController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
-    @GetMapping("customers/available/orders")
-    public ResponseEntity<Object> getAvailableOrders(){
-        List<Order> orders = orderService.getAvailableOrders();
-        return new ResponseEntity<>(orders, HttpStatus.OK);
-    }
-
     @PostMapping("customers/{id}/orders")
     public ResponseEntity<Object> createOrder(
             @Validated @RequestBody CartOrderDTO cartOrderDTO,
@@ -99,6 +93,12 @@ public class MainController {
         orderService.cancelOrder(id);
         return new ResponseEntity<>(null, HttpStatus.OK );
     }
+    @GetMapping("drivers/available/orders")
+    public ResponseEntity<Object> getAvailableOrders(){
+        List<Order> orders = orderService.getAvailableOrders();
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
     @PutMapping("drivers/{driver_id}/order/{order_id}")
     public ResponseEntity<Object> acceptOrder(@PathVariable Long driver_id, @PathVariable Long order_id){
         orderService.acceptOrder(driver_id, order_id);

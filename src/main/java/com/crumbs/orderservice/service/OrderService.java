@@ -30,6 +30,7 @@ public class OrderService {
     private final OrderDTOMapper orderDTOMapper;
     private final DriverRepository driverRepository;
     private final OrderStatusRepository orderStatusRepository;
+    private final DriverStateRepository driverStateRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -40,7 +41,8 @@ public class OrderService {
             UserDetailsRepository userDetailsRepository,
             OrderDTOMapper orderDTOMapper,
             DriverRepository driverRepository,
-            OrderStatusRepository orderStatusRepository){
+            OrderStatusRepository orderStatusRepository,
+            DriverStateRepository driverStateRepository){
 
         this.orderRepository = orderRepository;
         this.foodOrderRepository = foodOrderRepository;
@@ -51,6 +53,7 @@ public class OrderService {
         this.orderDTOMapper = orderDTOMapper;
         this.driverRepository = driverRepository;
         this.orderStatusRepository = orderStatusRepository;
+        this.driverStateRepository = driverStateRepository;
     }
 
     public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO){
@@ -162,7 +165,12 @@ public class OrderService {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
+
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
+        DriverState driverState = driverStateRepository.findById("BUSY").get();
+
+        driver.setState(driverState);
+        driverRepository.save(driver);
 
         order.setDriver(driver);
         order.setOrderStatus(orderStatus);
