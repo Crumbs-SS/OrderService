@@ -8,7 +8,7 @@ public class OrderSpecification  {
 
     public static Specification<Order> getOrdersByCustomerFirstName(String name){
         return (root, query, builder) -> builder.like(root.join("customer")
-                .join("userDetails").get("firstName"), "%"+name+"%");
+                .join("userDetails").get("firstName"), "%" + name + "%");
     }
 
     public static Specification<Order> getOrdersByCustomerLastName(String name){

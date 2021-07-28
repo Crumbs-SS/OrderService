@@ -10,6 +10,7 @@ import com.crumbs.orderservice.service.CartService;
 import com.crumbs.orderservice.service.OrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -45,10 +46,15 @@ public class MainController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue="3") Integer size,
             @RequestParam(defaultValue="") String query,
-            @RequestParam(defaultValue="") String filterBy
+            @RequestParam(defaultValue="") String filterBy,
+            @RequestParam(defaultValue="id") String sortBy,
+            @RequestParam(defaultValue="asc") String orderBy
 
     ){
-        Page<Order> orders = orderService.getOrders(query, filterBy, PageRequest.of(page, size));
+        Sort.Direction direction = "asc".equals(orderBy) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<Order> orders = orderService.getOrders(query, filterBy, pageRequest);
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
     @PostMapping("customers/{id}/orders")
