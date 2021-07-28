@@ -6,11 +6,10 @@ import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.DTO.CartOrderDTO;
 import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
+import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,7 +88,7 @@ public class OrderService {
         return ordersCreated;
     }
 
-    public OrdersDTO getOrders(Long userId, PageRequest pageRequest){
+    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         return OrdersDTO.builder()
                 .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
@@ -97,12 +96,36 @@ public class OrderService {
                 .build();
     }
 
+    public Page<Order> getOrders(String query, String filterBy, PageRequest pageRequest){
+        return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
+    }
+
+
+    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow();
+
+        order.setPhone(cartOrderDTO.getPhone());
+        order.setPreferences(cartOrderDTO.getPreferences());
+        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+
+        if(cartOrderDTO.getCartItems() != null){
+            order.getFoodOrders().forEach(foodOrderRepository::delete);
+            List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
+            foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
+
+            order.setFoodOrders(foodOrders);
+        }
+        orderRepository.save(order);
+
+        return orderDTOMapper.getOrderDTO(order);
+    }
+
     private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest){
         OrderStatus orderStatus = OrderStatus.builder().status(status).build();
         return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
     }
 
-    // Expected: RestaurantId: List<FoodOrder>
+
     private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders){
         Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
 
@@ -120,28 +143,6 @@ public class OrderService {
         });
 
         return hashMap;
-    }
-
-    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId){
-        Order order = orderRepository.findById(orderId).orElseThrow();
-
-        order.setPhone(cartOrderDTO.getPhone());
-        order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
-
-        if(cartOrderDTO.getCartItems() != null){
-            //Remove old foodOrders
-            order.getFoodOrders().forEach(foodOrderRepository::delete);
-
-            // Create FoodOrder for each cartItem from the orderDto
-            List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
-            foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
-
-            order.setFoodOrders(foodOrders);
-        }
-        orderRepository.save(order);
-
-        return orderDTOMapper.getOrderDTO(order);
     }
 
 }

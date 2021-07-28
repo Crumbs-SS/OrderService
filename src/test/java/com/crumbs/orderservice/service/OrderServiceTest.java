@@ -84,7 +84,7 @@ class OrderServiceTest {
         Mockito.when(orderRepository.findOrderByOrderStatusAndCustomer(any(OrderStatus.class),
                 any(Customer.class), any(PageRequest.class))).thenReturn(ordersDTO.getActiveOrders());
 
-        assertEquals(orderService.getOrders(userDetails.getId(), pageRequest).getActiveOrders().getNumberOfElements(),
+        assertEquals(orderService.getOrdersDTO(userDetails.getId(), pageRequest).getActiveOrders().getNumberOfElements(),
                 ordersDTO.getActiveOrders().getNumberOfElements());
     }
 
