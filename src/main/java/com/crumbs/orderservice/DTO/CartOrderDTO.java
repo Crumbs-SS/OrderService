@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -23,6 +24,9 @@ public class CartOrderDTO {
     @NotNull
     @NotEmpty
     private String address;
+
+    private Timestamp deliveryTime;
+    private String orderStatus;
 
     private String preferences;
     private List<CartItemDTO> cartItems;

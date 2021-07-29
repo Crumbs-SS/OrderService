@@ -86,6 +86,16 @@ public class MainController {
         return new ResponseEntity<>(order, HttpStatus.NO_CONTENT);
     }
 
+    @PutMapping("orders/{orderId}")
+    public ResponseEntity<Object> updateOrder(
+            @PathVariable Long orderId,
+            @Validated @RequestBody CartOrderDTO cartOrderDTO
+    ){
+        System.out.println(orderId);
+      OrderDTO orderDTO = orderService.updateOrder(cartOrderDTO, orderId);
+      return new ResponseEntity<>(orderDTO, HttpStatus.NO_CONTENT);
+    }
+
     @GetMapping("customers/{id}/cart")
     public ResponseEntity<Object> getCartItems(@PathVariable Long id) {
         List<CartItem> cartItems = cartService.getCartItems(id);
@@ -104,6 +114,14 @@ public class MainController {
             @PathVariable Long cartId){
         List<CartItem> cartItems = cartService.removeItem(userId, cartId);
         return new ResponseEntity<>(cartItems, HttpStatus.OK);
+    }
+
+    @DeleteMapping("orders/{id}")
+    public ResponseEntity<Object> deleteOrder(
+            @PathVariable Long id
+    ){
+        OrderDTO orderDTO = orderService.deleteOrder(id);
+        return new ResponseEntity<>(orderDTO, HttpStatus.OK);
     }
 }
 

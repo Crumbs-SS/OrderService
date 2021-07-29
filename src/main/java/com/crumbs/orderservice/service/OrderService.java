@@ -27,6 +27,7 @@ public class OrderService {
     private final UserDetailsRepository userDetailsRepository;
     private final LocationRepository locationRepository;
     private final OrderDTOMapper orderDTOMapper;
+    private final OrderStatusRepository orderStatusRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -35,6 +36,7 @@ public class OrderService {
             FoodOrderMapper foodOrderMapper,
             LocationRepository locationRepository,
             UserDetailsRepository userDetailsRepository,
+            OrderStatusRepository orderStatusRepository,
             OrderDTOMapper orderDTOMapper){
 
         this.orderRepository = orderRepository;
@@ -44,6 +46,7 @@ public class OrderService {
         this.userDetailsRepository = userDetailsRepository;
         this.locationRepository = locationRepository;
         this.orderDTOMapper = orderDTOMapper;
+        this.orderStatusRepository = orderStatusRepository;
 
     }
 
@@ -100,6 +103,22 @@ public class OrderService {
         return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
     }
 
+    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
+
+        orderStatus = orderStatusRepository.save(orderStatus);
+
+        order.setPhone(cartOrderDTO.getPhone());
+        order.setPreferences(cartOrderDTO.getPreferences());
+        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+        order.setOrderStatus(orderStatus);
+        order.setDeliveryTime(cartOrderDTO.getDeliveryTime());
+
+
+        orderRepository.save(order);
+        return orderDTOMapper.getOrderDTO(order);
+    }
 
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId){
         Order order = orderRepository.findById(orderId).orElseThrow();
@@ -117,6 +136,15 @@ public class OrderService {
         }
         orderRepository.save(order);
 
+        return orderDTOMapper.getOrderDTO(order);
+    }
+
+    public OrderDTO deleteOrder(Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
+        order.setOrderStatus(orderStatusRepository.save(orderStatus));
+
+        orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
 
