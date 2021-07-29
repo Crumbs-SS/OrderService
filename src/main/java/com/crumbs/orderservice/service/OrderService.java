@@ -154,7 +154,7 @@ public class OrderService {
     }
 
 
-    private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders){
+    private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders) {
         Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
 
         foodOrders.forEach(foodOrder -> {
@@ -162,15 +162,20 @@ public class OrderService {
             List<FoodOrder> foodOrdersInHash = hashMap.get(restaurantId) != null ?
                     hashMap.get(restaurantId) : new ArrayList<>();
 
-            if(!foodOrdersInHash.isEmpty()){
+            if (!foodOrdersInHash.isEmpty()) {
                 foodOrdersInHash.add(foodOrder);
-            }else {
+            } else {
                 foodOrdersInHash.add(foodOrder);
                 hashMap.put(restaurantId, foodOrdersInHash);
             }
         });
 
         return hashMap;
+    }
+
+    public void cancelOrder(Long order_id){
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        orderRepository.deleteById(order_id);
     }
 
 }

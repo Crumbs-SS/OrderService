@@ -118,9 +118,15 @@ public class MainController {
     @DeleteMapping("orders/{id}")
     public ResponseEntity<Object> deleteOrder(
             @PathVariable Long id
-    ){
+    ) {
         OrderDTO orderDTO = orderService.deleteOrder(id);
         return new ResponseEntity<>(orderDTO, HttpStatus.OK);
+    }
+
+    @DeleteMapping("customers/orders/{id}")
+    public ResponseEntity<Object> cancelOrder(@PathVariable Long id){
+        orderService.cancelOrder(id);
+        return new ResponseEntity<>(null, HttpStatus.OK );
     }
 }
 
