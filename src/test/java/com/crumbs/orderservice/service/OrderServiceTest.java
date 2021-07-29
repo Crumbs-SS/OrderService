@@ -38,6 +38,7 @@ class OrderServiceTest {
     @MockBean UserDetailsRepository userDetailsRepository;
     @MockBean LocationRepository locationRepository;
     @MockBean OrderDTOMapper orderDTOMapper;
+    @MockBean OrderStatusRepository orderStatusRepository;
 
     @BeforeEach
     void beforeEach(){
@@ -46,6 +47,7 @@ class OrderServiceTest {
         Restaurant restaurant = MockUtil.getRestaurant();
         Order order = MockUtil.getOrder();
         OrderDTO orderDTO = MockUtil.getOrderDTO();
+        OrderStatus orderStatus = MockUtil.getOrderStatus();
 
 
         Mockito.when(userDetailsRepository.findById(userDetails.getId()))
@@ -62,6 +64,8 @@ class OrderServiceTest {
                 .thenReturn(Optional.of(order));
         Mockito.when(orderDTOMapper.getOrderDTO(order))
                 .thenReturn(orderDTO);
+        Mockito.when(orderStatusRepository.save(orderStatus))
+                .thenReturn(orderStatus);
 
         Mockito.doNothing().when(foodOrderRepository).delete(any(FoodOrder.class));
 
@@ -97,5 +101,21 @@ class OrderServiceTest {
 
         assertEquals(orderService.updateOrder(cartOrderDTO, userDetails.getId(), order.getId()).getFoodOrders().size(),
                 orderDTO.getFoodOrders().size());
+    }
+
+    @Test
+    void testUpdateOrder() {
+        Order order = MockUtil.getOrder();
+        CartOrderDTO cartOrderDTO = MockUtil.getCartOrderDTO();
+        OrderDTO orderDTO = MockUtil.getOrderDTO();
+
+        assertEquals(orderService.updateOrder(cartOrderDTO, order.getId()).getFoodOrders().size(),
+                orderDTO.getFoodOrders().size());
+    }
+
+    @Test
+    void deleteOrder() {
+        Order order = MockUtil.getOrder();
+        assertEquals(orderService.deleteOrder(order.getId()).getId(), order.getId());
     }
 }
