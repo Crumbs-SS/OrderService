@@ -3,6 +3,7 @@ package com.crumbs.orderservice.controller;
 import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.service.CartService;
 import com.crumbs.orderservice.service.OrderService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -86,6 +87,23 @@ class MainControllerTest {
         mockMvc.perform(delete("/customers/{userId}/cart/{cartId}",
                 MockUtil.getCustomer().getId(),
                 MockUtil.getCartItem().getId())
+                .contentType("application/json"))
+                .andExpect(status().isOk());
+
+    }
+
+    @Test
+    void testUpdateOrder() throws Exception {
+        mockMvc.perform(put("/orders/{orderId}",
+                MockUtil.getOrder().getId())
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(MockUtil.getCartOrderDTO())))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteOrder() throws Exception {
+        mockMvc.perform(delete("/orders/{id}", MockUtil.getOrder().getId())
                 .contentType("application/json"))
                 .andExpect(status().isOk());
 

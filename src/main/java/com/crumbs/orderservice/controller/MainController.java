@@ -91,7 +91,6 @@ public class MainController {
             @PathVariable Long orderId,
             @Validated @RequestBody CartOrderDTO cartOrderDTO
     ){
-        System.out.println(orderId);
       OrderDTO orderDTO = orderService.updateOrder(cartOrderDTO, orderId);
       return new ResponseEntity<>(orderDTO, HttpStatus.NO_CONTENT);
     }
