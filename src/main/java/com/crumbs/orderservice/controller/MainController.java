@@ -101,8 +101,7 @@ public class MainController {
 
     @PutMapping("drivers/{driver_id}/order/{order_id}")
     public ResponseEntity<Object> acceptOrder(@PathVariable Long driver_id, @PathVariable Long order_id){
-        orderService.acceptOrder(driver_id, order_id);
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return new ResponseEntity<>(orderService.acceptOrder(driver_id, order_id), HttpStatus.OK);
     }
 }
 
