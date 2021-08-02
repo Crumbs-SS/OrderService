@@ -35,6 +35,12 @@ public class MockUtil {
                 .build();
     }
 
+    public static OrderStatus getOrderStatus(){
+        return OrderStatus.builder()
+                .status("AWAITING_DRIVER")
+                .build();
+    }
+
     public static Restaurant getRestaurant(){
         return Restaurant.builder()
                 .name("Restaurant Test")
@@ -66,6 +72,7 @@ public class MockUtil {
                 .cartItems(List.of(getCartItemDTO()))
                 .phone("1234567890")
                 .address("Testing Lane")
+                .orderStatus("AWAITING_DRIVER")
                 .preferences("")
                 .build();
     }

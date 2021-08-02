@@ -6,11 +6,10 @@ import com.crumbs.orderservice.DTO.CartItemDTO;
 import com.crumbs.orderservice.DTO.CartOrderDTO;
 import com.crumbs.orderservice.DTO.OrderDTO;
 import com.crumbs.orderservice.DTO.OrdersDTO;
+import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,7 +96,7 @@ public class OrderService {
         return ordersCreated;
     }
 
-    public OrdersDTO getOrders(Long userId, PageRequest pageRequest){
+    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest){
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         return OrdersDTO.builder()
                 .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
@@ -105,29 +104,25 @@ public class OrderService {
                 .build();
     }
 
-    private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest){
-        OrderStatus orderStatus = OrderStatus.builder().status(status).build();
-        return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
+    public Page<Order> getOrders(String query, String filterBy, PageRequest pageRequest){
+        return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
     }
 
-    // Expected: RestaurantId: List<FoodOrder>
-    private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders){
-        Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
+    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
 
-        foodOrders.forEach(foodOrder -> {
-            Long restaurantId = foodOrder.getMenuItem().getRestaurant().getId();
-            List<FoodOrder> foodOrdersInHash = hashMap.get(restaurantId) != null ?
-                    hashMap.get(restaurantId) : new ArrayList<>();
+        orderStatus = orderStatusRepository.save(orderStatus);
 
-            if(!foodOrdersInHash.isEmpty()){
-                foodOrdersInHash.add(foodOrder);
-            }else {
-                foodOrdersInHash.add(foodOrder);
-                hashMap.put(restaurantId, foodOrdersInHash);
-            }
-        });
+        order.setPhone(cartOrderDTO.getPhone());
+        order.setPreferences(cartOrderDTO.getPreferences());
+        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+        order.setOrderStatus(orderStatus);
+        order.setDeliveryTime(cartOrderDTO.getDeliveryTime());
 
-        return hashMap;
+
+        orderRepository.save(order);
+        return orderDTOMapper.getOrderDTO(order);
     }
 
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId){
@@ -138,10 +133,7 @@ public class OrderService {
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
         if(cartOrderDTO.getCartItems() != null){
-            //Remove old foodOrders
             order.getFoodOrders().forEach(foodOrderRepository::delete);
-
-            // Create FoodOrder for each cartItem from the orderDto
             List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
             foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
 
@@ -150,6 +142,40 @@ public class OrderService {
         orderRepository.save(order);
 
         return orderDTOMapper.getOrderDTO(order);
+    }
+
+    public OrderDTO deleteOrder(Long orderId){
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
+        order.setOrderStatus(orderStatusRepository.save(orderStatus));
+
+        orderRepository.save(order);
+        return orderDTOMapper.getOrderDTO(order);
+    }
+
+    private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest){
+        OrderStatus orderStatus = OrderStatus.builder().status(status).build();
+        return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
+    }
+
+
+    private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders) {
+        Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
+
+        foodOrders.forEach(foodOrder -> {
+            Long restaurantId = foodOrder.getMenuItem().getRestaurant().getId();
+            List<FoodOrder> foodOrdersInHash = hashMap.get(restaurantId) != null ?
+                    hashMap.get(restaurantId) : new ArrayList<>();
+
+            if (!foodOrdersInHash.isEmpty()) {
+                foodOrdersInHash.add(foodOrder);
+            } else {
+                foodOrdersInHash.add(foodOrder);
+                hashMap.put(restaurantId, foodOrdersInHash);
+            }
+        });
+
+        return hashMap;
     }
 
     public void cancelOrder(Long order_id){
