@@ -128,5 +128,15 @@ public class MainController {
         orderService.cancelOrder(id);
         return new ResponseEntity<>(null, HttpStatus.OK );
     }
+    @GetMapping("drivers/available/orders")
+    public ResponseEntity<Object> getAvailableOrders(){
+        List<Order> orders = orderService.getAvailableOrders();
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
+    @PutMapping("drivers/{driver_id}/order/{order_id}")
+    public ResponseEntity<Object> acceptOrder(@PathVariable Long driver_id, @PathVariable Long order_id){
+        return new ResponseEntity<>(orderService.acceptOrder(driver_id, order_id), HttpStatus.OK);
+    }
 }
 
