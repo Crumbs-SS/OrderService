@@ -138,5 +138,16 @@ public class MainController {
     public ResponseEntity<Object> acceptOrder(@PathVariable Long driver_id, @PathVariable Long order_id){
         return new ResponseEntity<>(orderService.acceptOrder(driver_id, order_id), HttpStatus.OK);
     }
+
+    @PutMapping("drivers/order/{order_id}/pickUp")
+    public ResponseEntity<Object> setPickedUpAt(@PathVariable Long order_id){
+        orderService.setPickedUpAt(order_id);
+        return new ResponseEntity<>("Set Picked Up At successful", HttpStatus.OK);
+    }
+    @PutMapping("drivers/order/{order_id}")
+    public ResponseEntity<Object> fulfilOrder(@PathVariable Long order_id){
+        orderService.fulfilOrder(order_id);
+        return new ResponseEntity<>("Order fulfilled", HttpStatus.OK);
+    }
 }
 

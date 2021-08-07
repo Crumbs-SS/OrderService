@@ -9,11 +9,19 @@ import com.crumbs.orderservice.DTO.OrdersDTO;
 import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
+import com.google.maps.DistanceMatrixApi;
+import com.google.maps.DistanceMatrixApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.errors.ApiException;
+import com.google.maps.model.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -54,6 +62,9 @@ public class OrderService {
         this.orderStatusRepository = orderStatusRepository;
         this.driverStateRepository = driverStateRepository;
     }
+    public String locationToString(Location location){
+        return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + " " + location.getZipCode() + ", United States";
+    }
 
     public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO){
 
@@ -75,6 +86,12 @@ public class OrderService {
                     .build();
 
             locationRepository.save(deliverLocation);
+
+            try {
+               DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+
+
+
             Order order = Order.builder()
                     .restaurant(restaurant)
                     .customer(user.getCustomer())
@@ -83,13 +100,24 @@ public class OrderService {
                     .preferences(cartOrderDTO.getPreferences())
                     .phone(cartOrderDTO.getPhone())
                     .createdAt(new Timestamp(new Date().getTime()))
-                    .deliveryTime(new Timestamp(new Date().getTime()))
+                    .deliverySlot(new Timestamp(new Date().getTime()))
                     .deliveryLocation(deliverLocation)
+                    .deliveryTime(result.duration.toString())
+                    .deliveryDistance(result.distance.toString())
+                    .deliveryPay(BigDecimal.valueOf(result.duration.inSeconds))
                     .build();
             foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
+                orderRepository.save(order);
+                ordersCreated.add(order);
 
-            orderRepository.save(order);
-            ordersCreated.add(order);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ApiException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
 
         });
 
@@ -118,7 +146,7 @@ public class OrderService {
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
         order.setOrderStatus(orderStatus);
-        order.setDeliveryTime(cartOrderDTO.getDeliveryTime());
+        order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
 
 
         orderRepository.save(order);
@@ -192,6 +220,9 @@ public class OrderService {
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
 
+        if(!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
+            throw new RuntimeException("Order no longer available");
+
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
         DriverState driverState = driverStateRepository.findById("BUSY").get();
 
@@ -204,4 +235,45 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException {
+
+        final String API_KEY = "AIzaSyBlmGGAkSVOeBCNMab09DnxefDmH4hfdt4";
+        final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
+
+        String[] origins = new String[1];
+        String[] destinations = new String[1];
+
+        origins[0] = origin;
+        destinations[0] = destination;
+
+        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).await();
+        DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
+
+       return distanceMatrixRows[0].elements[0];
+
+    }
+
+    public void setPickedUpAt(Long order_id) {
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        order.setPickedUpAt(new Timestamp(System.currentTimeMillis()));
+        orderRepository.save(order);
+    }
+
+    public Order fulfilOrder(Long order_id) {
+
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        Driver driver = order.getDriver();
+
+        OrderStatus orderStatus = orderStatusRepository.findById("FULFILLED").get();
+        DriverState driverState = driverStateRepository.findById("AVAILABLE").get();
+
+        driver.setState(driverState);
+        driverRepository.save(driver);
+
+        order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
+        order.setOrderStatus(orderStatus);
+
+        return orderRepository.save(order);
+
+    }
 }
