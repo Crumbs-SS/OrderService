@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-@Transactional(rollbackFor = { Exception.class })
+@Transactional(rollbackFor = {Exception.class})
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -41,15 +41,15 @@ public class OrderService {
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
-            FoodOrderRepository foodOrderRepository,
-            RestaurantRepository restaurantRepository,
-            FoodOrderMapper foodOrderMapper,
-            LocationRepository locationRepository,
-            UserDetailsRepository userDetailsRepository,
-            OrderDTOMapper orderDTOMapper,
-            DriverRepository driverRepository,
-            OrderStatusRepository orderStatusRepository,
-            DriverStateRepository driverStateRepository){
+                 FoodOrderRepository foodOrderRepository,
+                 RestaurantRepository restaurantRepository,
+                 FoodOrderMapper foodOrderMapper,
+                 LocationRepository locationRepository,
+                 UserDetailsRepository userDetailsRepository,
+                 OrderDTOMapper orderDTOMapper,
+                 DriverRepository driverRepository,
+                 OrderStatusRepository orderStatusRepository,
+                 DriverStateRepository driverStateRepository) {
 
         this.orderRepository = orderRepository;
         this.foodOrderRepository = foodOrderRepository;
@@ -62,11 +62,12 @@ public class OrderService {
         this.orderStatusRepository = orderStatusRepository;
         this.driverStateRepository = driverStateRepository;
     }
-    public String locationToString(Location location){
+
+    public String locationToString(Location location) {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + " " + location.getZipCode() + ", United States";
     }
 
-    public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO){
+    public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO) {
 
         List<Order> ordersCreated = new ArrayList<>();
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
@@ -88,25 +89,28 @@ public class OrderService {
             locationRepository.save(deliverLocation);
 
             try {
-               DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+                DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+                String deliveryTime = result.duration.toString();
+                //in future, check if customer location and restaurant location is more than 50 miles apart for example, or do some sort of distance check?
+                //also for driver, only view orders in his area? add story to backlog to handle this
+                String deliveryDistance = result.distance.toString();
+                Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
 
-
-
-            Order order = Order.builder()
-                    .restaurant(restaurant)
-                    .customer(user.getCustomer())
-                    .orderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build())
-                    .foodOrders(foodOrdersList)
-                    .preferences(cartOrderDTO.getPreferences())
-                    .phone(cartOrderDTO.getPhone())
-                    .createdAt(new Timestamp(new Date().getTime()))
-                    .deliverySlot(new Timestamp(new Date().getTime()))
-                    .deliveryLocation(deliverLocation)
-                    .deliveryTime(result.duration.toString())
-                    .deliveryDistance(result.distance.toString())
-                    .deliveryPay(BigDecimal.valueOf(result.duration.inSeconds))
-                    .build();
-            foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
+                Order order = Order.builder()
+                        .restaurant(restaurant)
+                        .customer(user.getCustomer())
+                        .orderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build())
+                        .foodOrders(foodOrdersList)
+                        .preferences(cartOrderDTO.getPreferences())
+                        .phone(cartOrderDTO.getPhone())
+                        .createdAt(new Timestamp(new Date().getTime()))
+                        .deliverySlot(new Timestamp(new Date().getTime()))
+                        .deliveryLocation(deliverLocation)
+                        .deliveryTime(deliveryTime)
+                        .deliveryDistance(deliveryDistance)
+                        .deliveryPay(deliveryPay)
+                        .build();
+                foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
 
@@ -124,7 +128,7 @@ public class OrderService {
         return ordersCreated;
     }
 
-    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest){
+    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest) {
         UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
         return OrdersDTO.builder()
                 .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
@@ -132,11 +136,11 @@ public class OrderService {
                 .build();
     }
 
-    public Page<Order> getOrders(String query, String filterBy, PageRequest pageRequest){
+    public Page<Order> getOrders(String query, String filterBy, PageRequest pageRequest) {
         return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
     }
 
-    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId){
+    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
 
@@ -148,19 +152,18 @@ public class OrderService {
         order.setOrderStatus(orderStatus);
         order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
 
-
         orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
 
-    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId){
+    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
 
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
-        if(cartOrderDTO.getCartItems() != null){
+        if (cartOrderDTO.getCartItems() != null) {
             order.getFoodOrders().forEach(foodOrderRepository::delete);
             List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
             foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
@@ -172,7 +175,7 @@ public class OrderService {
         return orderDTOMapper.getOrderDTO(order);
     }
 
-    public OrderDTO deleteOrder(Long orderId){
+    public OrderDTO deleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
@@ -181,7 +184,7 @@ public class OrderService {
         return orderDTOMapper.getOrderDTO(order);
     }
 
-    private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest){
+    private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest) {
         OrderStatus orderStatus = OrderStatus.builder().status(status).build();
         return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
     }
@@ -206,21 +209,22 @@ public class OrderService {
         return hashMap;
     }
 
-    public void cancelOrder(Long order_id){
+    public void cancelOrder(Long order_id) {
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         orderRepository.deleteById(order_id);
     }
 
-    public List<Order> getAvailableOrders(){
+    public List<Order> getAvailableOrders() {
         OrderStatus orderStatus = OrderStatus.builder().status("AWAITING_DRIVER").build();
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
-    public Order acceptOrder(Long driver_id, Long order_id ){
+
+    public Order acceptOrder(Long driver_id, Long order_id) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
 
-        if(!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
+        if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
 
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
@@ -246,10 +250,10 @@ public class OrderService {
         origins[0] = origin;
         destinations[0] = destination;
 
-        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).await();
+        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
         DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
 
-       return distanceMatrixRows[0].elements[0];
+        return distanceMatrixRows[0].elements[0];
 
     }
 
@@ -268,6 +272,8 @@ public class OrderService {
         DriverState driverState = driverStateRepository.findById("AVAILABLE").get();
 
         driver.setState(driverState);
+        Float totalPay = driver.getTotalPay() + order.getDeliveryPay();
+        driver.setTotalPay(totalPay);
         driverRepository.save(driver);
 
         order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
