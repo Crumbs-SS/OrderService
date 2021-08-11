@@ -31,7 +31,7 @@ public class OrderDTO {
 
     @NotNull
     @NotEmpty
-    private Timestamp deliveryTime;
+    private Timestamp deliverySlot;
 
     @NotNull
     @NotEmpty

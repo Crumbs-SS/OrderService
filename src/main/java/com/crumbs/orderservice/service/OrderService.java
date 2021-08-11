@@ -83,7 +83,7 @@ public class OrderService {
                     .preferences(cartOrderDTO.getPreferences())
                     .phone(cartOrderDTO.getPhone())
                     .createdAt(new Timestamp(new Date().getTime()))
-                    .deliveryTime(new Timestamp(new Date().getTime()))
+                    .deliverySlot(new Timestamp(new Date().getTime())) //Change to deliveryTimeSlot chosen by user
                     .deliveryLocation(deliverLocation)
                     .build();
             foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
@@ -118,7 +118,7 @@ public class OrderService {
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
         order.setOrderStatus(orderStatus);
-        order.setDeliveryTime(cartOrderDTO.getDeliveryTime());
+        order.setDeliverySlot(cartOrderDTO.getDeliveryTime());
 
 
         orderRepository.save(order);

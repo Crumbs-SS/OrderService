@@ -13,7 +13,7 @@ public class OrderDTOMapper {
                 .id(order.getId())
                 .phone(order.getPhone())
                 .preferences(order.getPreferences())
-                .deliveryTime(order.getDeliveryTime())
+                .deliverySlot(order.getDeliverySlot())
                 .createdAt(order.getCreatedAt())
                 .driverRating(order.getDriverRating())
                 .restaurantRating(order.getRestaurantRating())
