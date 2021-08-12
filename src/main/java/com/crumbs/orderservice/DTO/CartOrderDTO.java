@@ -25,7 +25,7 @@ public class CartOrderDTO {
     @NotEmpty
     private String address;
 
-    private Timestamp deliveryTime;
+    private Timestamp deliverySlot;
     private String orderStatus;
 
     private String preferences;
