@@ -89,7 +89,6 @@ public class OrderService {
 
             locationRepository.save(deliverLocation);
 
-
             DistanceMatrixElement result = null;
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
@@ -150,7 +149,7 @@ public class OrderService {
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
-
+        
         //once Elijah does location dropdown, I will add appropriate equals check
 //        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
 //        String deliveryTime = result.duration.toString();
