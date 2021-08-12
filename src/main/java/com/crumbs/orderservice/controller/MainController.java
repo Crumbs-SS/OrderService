@@ -133,6 +133,11 @@ public class MainController {
         List<Order> orders = orderService.getAvailableOrders();
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
+    @GetMapping("drivers/order/{driver_id}")
+    public ResponseEntity<Object> getAcceptedOrder(@PathVariable Long driver_id){
+        Order order = orderService.getAcceptedOrder(driver_id);
+        return new ResponseEntity<>(order, HttpStatus.OK);
+    }
 
     @PutMapping("drivers/{driver_id}/order/{order_id}")
     public ResponseEntity<Object> acceptOrder(@PathVariable Long driver_id, @PathVariable Long order_id){

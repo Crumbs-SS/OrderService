@@ -14,6 +14,7 @@ import com.google.maps.DistanceMatrixApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
 import com.google.maps.model.*;
+import lombok.SneakyThrows;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,8 +89,10 @@ public class OrderService {
 
             locationRepository.save(deliverLocation);
 
+
+            DistanceMatrixElement result = null;
             try {
-                DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
                 String deliveryTime = result.duration.toString();
                 //in future, check if customer location and restaurant location is more than 50 miles apart for example, or do some sort of distance check?
                 //also for driver, only view orders in his area? add story to backlog to handle this
@@ -113,7 +116,6 @@ public class OrderService {
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ApiException e) {
@@ -121,8 +123,6 @@ public class OrderService {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
         });
 
         return ordersCreated;
@@ -140,6 +140,7 @@ public class OrderService {
         return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
     }
 
+    @SneakyThrows
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
@@ -149,6 +150,17 @@ public class OrderService {
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+
+        //once Elijah does location dropdown, I will add appropriate equals check
+//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
+//        String deliveryTime = result.duration.toString();
+//        String deliveryDistance = result.distance.toString();
+//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
+//
+//        order.setDeliveryDistance(deliveryDistance);
+//        order.setDeliveryTime(deliveryTime);
+//        order.setDeliveryPay(deliveryPay);
+
         order.setOrderStatus(orderStatus);
         order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
 
@@ -162,6 +174,16 @@ public class OrderService {
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+
+        //once Elijah does location dropdown, I will add appropriate equals check
+//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
+//        String deliveryTime = result.duration.toString();
+//        String deliveryDistance = result.distance.toString();
+//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
+//
+//        order.setDeliveryDistance(deliveryDistance);
+//        order.setDeliveryTime(deliveryTime);
+//        order.setDeliveryPay(deliveryPay);
 
         if (cartOrderDTO.getCartItems() != null) {
             order.getFoodOrders().forEach(foodOrderRepository::delete);
@@ -241,14 +263,12 @@ public class OrderService {
 
     public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException {
 
+        //put as environment variable
         final String API_KEY = "AIzaSyBlmGGAkSVOeBCNMab09DnxefDmH4hfdt4";
         final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
 
-        String[] origins = new String[1];
-        String[] destinations = new String[1];
-
-        origins[0] = origin;
-        destinations[0] = destination;
+        String[] origins = {origin};
+        String[] destinations = {destination};
 
         DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
         DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
@@ -272,7 +292,11 @@ public class OrderService {
         DriverState driverState = driverStateRepository.findById("AVAILABLE").get();
 
         driver.setState(driverState);
-        Float totalPay = driver.getTotalPay() + order.getDeliveryPay();
+        Float totalPay;
+        if(driver.getTotalPay() != null)
+            totalPay = driver.getTotalPay() + order.getDeliveryPay();
+        else
+            totalPay = order.getDeliveryPay();
         driver.setTotalPay(totalPay);
         driverRepository.save(driver);
 
@@ -281,5 +305,8 @@ public class OrderService {
 
         return orderRepository.save(order);
 
+    }
+    public Order getAcceptedOrder(Long driver_id){
+        return orderRepository.findDriverAcceptedOrder(driver_id);
     }
 }
