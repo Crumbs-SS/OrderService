@@ -135,37 +135,7 @@ public class OrderService {
     @SneakyThrows
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
-        OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
 
-        orderStatus = orderStatusRepository.save(orderStatus);
-
-        order.setPhone(cartOrderDTO.getPhone());
-        order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
-        
-        //once Elijah does location dropdown, I will add appropriate equals check
-//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
-//        String deliveryTime = result.duration.toString();
-//        String deliveryDistance = result.distance.toString();
-//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
-//
-//        order.setDeliveryDistance(deliveryDistance);
-//        order.setDeliveryTime(deliveryTime);
-//        order.setDeliveryPay(deliveryPay);
-
-        order.setOrderStatus(orderStatus);
-        order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
-
-        orderRepository.save(order);
-        return orderDTOMapper.getOrderDTO(order);
-    }
-
-    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-
-        order.setPhone(cartOrderDTO.getPhone());
-        order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
         //once Elijah does location dropdown, I will add appropriate equals check
 //        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
@@ -177,15 +147,20 @@ public class OrderService {
 //        order.setDeliveryTime(deliveryTime);
 //        order.setDeliveryPay(deliveryPay);
 
-        if (cartOrderDTO.getCartItems() != null) {
-            order.getFoodOrders().forEach(foodOrderRepository::delete);
-            List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
-            foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
+        order.setPhone(cartOrderDTO.getPhone());
+        order.setPreferences(cartOrderDTO.getPreferences());
+        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
-            order.setFoodOrders(foodOrders);
+        if (cartOrderDTO.getDeliverySlot() != null)
+            order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
+
+        if (cartOrderDTO.getOrderStatus() != null) {
+            OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
+            orderStatus = orderStatusRepository.save(orderStatus);
+            order.setOrderStatus(orderStatus);
         }
-        orderRepository.save(order);
 
+        orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
 
@@ -240,6 +215,8 @@ public class OrderService {
 
         if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
+        if (orderRepository.findDriverAcceptedOrder(driver.getId()).size() > 1)
+            throw new RuntimeException("Driver is already delivering an order");
 
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
         DriverState driverState = driverStateRepository.findById("BUSY").orElseThrow();
@@ -296,9 +273,8 @@ public class OrderService {
         order.setOrderStatus(orderStatus);
 
         return orderRepository.save(order);
-
     }
     public Order getAcceptedOrder(Long driver_id){
-        return orderRepository.findDriverAcceptedOrder(driver_id);
+        return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
     }
 }

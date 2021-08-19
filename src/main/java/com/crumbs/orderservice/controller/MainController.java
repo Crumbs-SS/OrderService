@@ -76,17 +76,6 @@ public class MainController {
         return new ResponseEntity<>(cartItems, HttpStatus.CREATED);
     }
 
-    @PutMapping("customers/{customerId}/order/{orderId}")
-    public ResponseEntity<Object> updateOrder(
-            @PathVariable Long customerId,
-            @PathVariable Long orderId,
-            @Validated @RequestBody CartOrderDTO cartOrderDTO
-    ){
-
-        OrderDTO order = orderService.updateOrder(cartOrderDTO, customerId, orderId);
-        return new ResponseEntity<>(order, HttpStatus.NO_CONTENT);
-    }
-
     @PutMapping("orders/{orderId}")
     public ResponseEntity<Object> updateOrder(
             @PathVariable Long orderId,

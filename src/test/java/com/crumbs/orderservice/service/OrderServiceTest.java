@@ -99,7 +99,7 @@ class OrderServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
         OrderDTO orderDTO = MockUtil.getOrderDTO();
 
-        assertEquals(orderService.updateOrder(cartOrderDTO, userDetails.getId(), order.getId()).getFoodOrders().size(),
+        assertEquals(orderService.updateOrder(cartOrderDTO, order.getId()).getFoodOrders().size(),
                 orderDTO.getFoodOrders().size());
     }
 
