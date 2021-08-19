@@ -37,7 +37,8 @@ public class MainController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue="3") Integer size
     ){
-        OrdersDTO orders = orderService.getOrdersDTO(id, PageRequest.of(page, size));
+        OrdersDTO orders = orderService.getOrdersDTO(id, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC,
+                "createdAt")));
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 

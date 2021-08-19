@@ -10,7 +10,6 @@ import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.google.maps.DistanceMatrixApi;
-import com.google.maps.DistanceMatrixApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
 import com.google.maps.model.*;
@@ -20,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -115,11 +112,7 @@ public class OrderService {
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ApiException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (InterruptedException | IOException | ApiException e) {
                 e.printStackTrace();
             }
         });
@@ -231,7 +224,7 @@ public class OrderService {
     }
 
     public void cancelOrder(Long order_id) {
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         orderRepository.deleteById(order_id);
     }
 
@@ -240,7 +233,7 @@ public class OrderService {
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
-    public Order acceptOrder(Long driver_id, Long order_id) {
+    synchronized public Order acceptOrder(Long driver_id, Long order_id) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
@@ -248,8 +241,8 @@ public class OrderService {
         if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
 
-        OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
-        DriverState driverState = driverStateRepository.findById("BUSY").get();
+        OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
+        DriverState driverState = driverStateRepository.findById("BUSY").orElseThrow();
 
         driver.setState(driverState);
         driverRepository.save(driver);
