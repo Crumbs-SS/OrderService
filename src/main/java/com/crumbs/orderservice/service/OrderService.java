@@ -10,7 +10,6 @@ import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.google.maps.DistanceMatrixApi;
-import com.google.maps.DistanceMatrixApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
 import com.google.maps.model.*;
@@ -20,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -115,11 +112,7 @@ public class OrderService {
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ApiException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (InterruptedException | IOException | ApiException e) {
                 e.printStackTrace();
             }
         });
@@ -142,37 +135,7 @@ public class OrderService {
     @SneakyThrows
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
-        OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
 
-        orderStatus = orderStatusRepository.save(orderStatus);
-
-        order.setPhone(cartOrderDTO.getPhone());
-        order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
-        
-        //once Elijah does location dropdown, I will add appropriate equals check
-//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
-//        String deliveryTime = result.duration.toString();
-//        String deliveryDistance = result.distance.toString();
-//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
-//
-//        order.setDeliveryDistance(deliveryDistance);
-//        order.setDeliveryTime(deliveryTime);
-//        order.setDeliveryPay(deliveryPay);
-
-        order.setOrderStatus(orderStatus);
-        order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
-
-        orderRepository.save(order);
-        return orderDTOMapper.getOrderDTO(order);
-    }
-
-    public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long userId, Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow();
-
-        order.setPhone(cartOrderDTO.getPhone());
-        order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
         //once Elijah does location dropdown, I will add appropriate equals check
 //        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
@@ -184,15 +147,20 @@ public class OrderService {
 //        order.setDeliveryTime(deliveryTime);
 //        order.setDeliveryPay(deliveryPay);
 
-        if (cartOrderDTO.getCartItems() != null) {
-            order.getFoodOrders().forEach(foodOrderRepository::delete);
-            List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartOrderDTO.getCartItems());
-            foodOrders.forEach(foodOrder -> foodOrder.setOrder(order));
+        order.setPhone(cartOrderDTO.getPhone());
+        order.setPreferences(cartOrderDTO.getPreferences());
+        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
 
-            order.setFoodOrders(foodOrders);
+        if (cartOrderDTO.getDeliverySlot() != null)
+            order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
+
+        if (cartOrderDTO.getOrderStatus() != null) {
+            OrderStatus orderStatus = OrderStatus.builder().status(cartOrderDTO.getOrderStatus()).build();
+            orderStatus = orderStatusRepository.save(orderStatus);
+            order.setOrderStatus(orderStatus);
         }
-        orderRepository.save(order);
 
+        orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
 
@@ -231,7 +199,7 @@ public class OrderService {
     }
 
     public void cancelOrder(Long order_id) {
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         orderRepository.deleteById(order_id);
     }
 
@@ -240,16 +208,18 @@ public class OrderService {
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
-    public Order acceptOrder(Long driver_id, Long order_id) {
+    synchronized public Order acceptOrder(Long driver_id, Long order_id) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
 
         if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
+        if (orderRepository.findDriverAcceptedOrder(driver.getId()).size() > 1)
+            throw new RuntimeException("Driver is already delivering an order");
 
-        OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").get();
-        DriverState driverState = driverStateRepository.findById("BUSY").get();
+        OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
+        DriverState driverState = driverStateRepository.findById("BUSY").orElseThrow();
 
         driver.setState(driverState);
         driverRepository.save(driver);
@@ -303,9 +273,8 @@ public class OrderService {
         order.setOrderStatus(orderStatus);
 
         return orderRepository.save(order);
-
     }
     public Order getAcceptedOrder(Long driver_id){
-        return orderRepository.findDriverAcceptedOrder(driver_id);
+        return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
     }
 }

@@ -37,7 +37,8 @@ public class MainController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue="3") Integer size
     ){
-        OrdersDTO orders = orderService.getOrdersDTO(id, PageRequest.of(page, size));
+        OrdersDTO orders = orderService.getOrdersDTO(id, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC,
+                "createdAt")));
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
@@ -73,17 +74,6 @@ public class MainController {
 
         List<CartItem> cartItems = cartService.createCartItem(id, cartItemDTO);
         return new ResponseEntity<>(cartItems, HttpStatus.CREATED);
-    }
-
-    @PutMapping("customers/{customerId}/order/{orderId}")
-    public ResponseEntity<Object> updateOrder(
-            @PathVariable Long customerId,
-            @PathVariable Long orderId,
-            @Validated @RequestBody CartOrderDTO cartOrderDTO
-    ){
-
-        OrderDTO order = orderService.updateOrder(cartOrderDTO, customerId, orderId);
-        return new ResponseEntity<>(order, HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("orders/{orderId}")
