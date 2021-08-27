@@ -25,6 +25,10 @@ public class CartOrderDTO {
     @NotEmpty
     private String address;
 
+    @NotNull
+    @NotEmpty
+    private String stripeID;
+
     private Timestamp deliverySlot;
     private String orderStatus;
 
