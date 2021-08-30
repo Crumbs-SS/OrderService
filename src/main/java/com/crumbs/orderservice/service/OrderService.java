@@ -36,6 +36,7 @@ public class OrderService {
     private final DriverRepository driverRepository;
     private final OrderStatusRepository orderStatusRepository;
     private final DriverStateRepository driverStateRepository;
+    private final PaymentRepository paymentRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -47,7 +48,8 @@ public class OrderService {
                  OrderDTOMapper orderDTOMapper,
                  DriverRepository driverRepository,
                  OrderStatusRepository orderStatusRepository,
-                 DriverStateRepository driverStateRepository) {
+                 DriverStateRepository driverStateRepository,
+                 PaymentRepository paymentRepository) {
 
         this.orderRepository = orderRepository;
         this.foodOrderRepository = foodOrderRepository;
@@ -59,6 +61,7 @@ public class OrderService {
         this.driverRepository = driverRepository;
         this.orderStatusRepository = orderStatusRepository;
         this.driverStateRepository = driverStateRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     public String locationToString(Location location) {
@@ -86,6 +89,10 @@ public class OrderService {
 
             locationRepository.save(deliverLocation);
 
+            Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
+            payment.setStatus("succeeded");
+            payment = paymentRepository.save(payment);
+
             DistanceMatrixElement result = null;
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
@@ -108,6 +115,7 @@ public class OrderService {
                         .deliveryTime(deliveryTime)
                         .deliveryDistance(deliveryDistance)
                         .deliveryPay(deliveryPay)
+                        .payment(payment)
                         .build();
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
