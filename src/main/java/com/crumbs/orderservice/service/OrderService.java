@@ -79,12 +79,12 @@ public class OrderService {
         hashMap.forEach((restaurantId, foodOrdersList) -> {
             Restaurant restaurant = restaurantRepository.findById(restaurantId)
                     .orElseThrow();
-
+            String[] address = cartOrderDTO.getAddress().split(", ");
             Location deliverLocation = Location.builder()
                     .zipCode("11111")
-                    .state("Texas")
-                    .city("Houston")
-                    .street(cartOrderDTO.getAddress())
+                    .state(address[2])
+                    .city(address[1])
+                    .street(address[0])
                     .build();
 
             locationRepository.save(deliverLocation);
