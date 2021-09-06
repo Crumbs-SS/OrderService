@@ -27,7 +27,6 @@ import java.util.*;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final FoodOrderRepository foodOrderRepository;
     private final RestaurantRepository restaurantRepository;
     private final FoodOrderMapper foodOrderMapper;
     private final UserDetailsRepository userDetailsRepository;
@@ -40,7 +39,6 @@ public class OrderService {
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
-                 FoodOrderRepository foodOrderRepository,
                  RestaurantRepository restaurantRepository,
                  FoodOrderMapper foodOrderMapper,
                  LocationRepository locationRepository,
@@ -52,7 +50,6 @@ public class OrderService {
                  PaymentRepository paymentRepository) {
 
         this.orderRepository = orderRepository;
-        this.foodOrderRepository = foodOrderRepository;
         this.restaurantRepository = restaurantRepository;
         this.foodOrderMapper = foodOrderMapper;
         this.userDetailsRepository = userDetailsRepository;
@@ -92,7 +89,7 @@ public class OrderService {
             payment.setStatus("succeeded");
             payment = paymentRepository.save(payment);
 
-            DistanceMatrixElement result = null;
+            DistanceMatrixElement result;
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
                 String deliveryTime = result.duration.toString();
@@ -259,7 +256,7 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public Order fulfilOrder(Long order_id) {
+    public void fulfilOrder(Long order_id) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
@@ -279,7 +276,7 @@ public class OrderService {
         order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
         order.setOrderStatus(orderStatus);
 
-        return orderRepository.save(order);
+        orderRepository.save(order);
     }
     public Order getAcceptedOrder(Long driver_id){
         return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
