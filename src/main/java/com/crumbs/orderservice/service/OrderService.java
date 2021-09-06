@@ -65,7 +65,7 @@ public class OrderService {
     }
 
     public String locationToString(Location location) {
-        return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + " " + location.getZipCode() + ", United States";
+        return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
     }
 
     public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO) {
@@ -81,7 +81,6 @@ public class OrderService {
                     .orElseThrow();
             String[] address = cartOrderDTO.getAddress().split(", ");
             Location deliverLocation = Location.builder()
-                    .zipCode("11111")
                     .state(address[2])
                     .city(address[1])
                     .street(address[0])
