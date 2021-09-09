@@ -159,15 +159,8 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
-        Customer customer = order.getCustomer();
-        Integer customerPoints = customer.getLoyaltyPoints();
-        Integer orderPoints = (int)(order.getFoodOrders().stream()
-                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
-                .reduce(0F, Float::sum)/5);
+        revokeLoyaltyPoints(order);
 
-        customer.setLoyaltyPoints(Math.max(0, customerPoints - orderPoints));
-
-        userDetailsRepository.save(order.getCustomer().getUserDetails());
         orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
@@ -299,7 +292,7 @@ public class OrderService {
 
     public DriverRating getDriverRating(Long order_id){ return driverRatingRepository.findDriverRatingByOrderId(order_id);}
 
-    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO){
+    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         DriverRating rating = new DriverRating();
@@ -316,5 +309,17 @@ public class OrderService {
 
         return rating;
 
+    }
+
+    private void revokeLoyaltyPoints(Order order){
+        Customer customer = order.getCustomer();
+        Integer customerPoints = customer.getLoyaltyPoints();
+        Integer orderPoints = (int)(order.getFoodOrders().stream()
+                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
+                .reduce(0F, Float::sum)/5);
+
+        customer.setLoyaltyPoints(Math.max(0, customerPoints - orderPoints));
+
+        userDetailsRepository.save(order.getCustomer().getUserDetails());
     }
 }
