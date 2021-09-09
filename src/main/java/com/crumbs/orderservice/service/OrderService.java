@@ -93,8 +93,6 @@ public class OrderService {
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
                 String deliveryTime = result.duration.toString();
-                //in future, check if customer location and restaurant location is more than 50 miles apart for example, or do some sort of distance check?
-                //also for driver, only view orders in his area? add story to backlog to handle this
                 String deliveryDistance = result.distance.toString();
                 Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
 
@@ -161,7 +159,15 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
+        Customer customer = order.getCustomer();
+        Integer customerPoints = customer.getLoyaltyPoints();
+        Integer orderPoints = (int)(order.getFoodOrders().stream()
+                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
+                .reduce(0F, Float::sum)/5);
 
+        customer.setLoyaltyPoints(Math.max(0, customerPoints - orderPoints));
+
+        userDetailsRepository.save(order.getCustomer().getUserDetails());
         orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
     }
@@ -276,8 +282,16 @@ public class OrderService {
 
         order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
         order.setOrderStatus(orderStatus);
-
         orderRepository.save(order);
+
+        Float total = order.getFoodOrders().stream()
+                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
+                .reduce(0F, Float::sum);
+
+        order.getCustomer().setLoyaltyPoints(((int)(total/5))
+                + order.getCustomer().getLoyaltyPoints());
+
+        userDetailsRepository.save(order.getCustomer().getUserDetails());
     }
     public Order getAcceptedOrder(Long driver_id){
         return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
