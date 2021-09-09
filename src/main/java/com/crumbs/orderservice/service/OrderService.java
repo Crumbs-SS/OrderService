@@ -276,12 +276,7 @@ public class OrderService {
         order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
         order.setOrderStatus(orderStatus);
         orderRepository.save(order);
-
-        Float total = order.getFoodOrders().stream()
-                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
-                .reduce(0F, Float::sum);
-
-        order.getCustomer().setLoyaltyPoints(((int)(total/5))
+        order.getCustomer().setLoyaltyPoints((getLoyaltyPointsForOrder(order))
                 + order.getCustomer().getLoyaltyPoints());
 
         userDetailsRepository.save(order.getCustomer().getUserDetails());
@@ -314,12 +309,15 @@ public class OrderService {
     private void revokeLoyaltyPoints(Order order){
         Customer customer = order.getCustomer();
         Integer customerPoints = customer.getLoyaltyPoints();
-        Integer orderPoints = (int)(order.getFoodOrders().stream()
-                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
-                .reduce(0F, Float::sum)/5);
+        Integer orderPoints = getLoyaltyPointsForOrder(order);
 
         customer.setLoyaltyPoints(Math.max(0, customerPoints - orderPoints));
-
         userDetailsRepository.save(order.getCustomer().getUserDetails());
+    }
+
+    private Integer getLoyaltyPointsForOrder(Order order){
+        return (int)(order.getFoodOrders().stream()
+                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
+                .reduce(0F, Float::sum)/5);
     }
 }
