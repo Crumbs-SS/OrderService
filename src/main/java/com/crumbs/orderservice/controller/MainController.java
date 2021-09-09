@@ -149,5 +149,12 @@ public class MainController {
     public ResponseEntity<Object> submitDriverRating(@PathVariable Long order_id, @Validated @RequestBody RatingDTO rating){
         return new ResponseEntity<>(orderService.submitDriverRating(order_id, rating), HttpStatus.OK);
     }
+
+    @PutMapping("drivers/{driverId}/abandon")
+    public ResponseEntity<Object> abandonOrder(
+            @PathVariable Long driverId){
+        Order order = orderService.abandonOrder(driverId);
+        return new ResponseEntity<>(order, HttpStatus.OK);
+    }
 }
 

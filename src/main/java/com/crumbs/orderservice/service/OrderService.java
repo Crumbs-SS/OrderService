@@ -140,17 +140,6 @@ public class OrderService {
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
 
-
-        //once Elijah does location dropdown, I will add appropriate equals check
-//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
-//        String deliveryTime = result.duration.toString();
-//        String deliveryDistance = result.distance.toString();
-//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
-//
-//        order.setDeliveryDistance(deliveryDistance);
-//        order.setDeliveryTime(deliveryTime);
-//        order.setDeliveryPay(deliveryPay);
-
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
@@ -232,6 +221,18 @@ public class OrderService {
         order.setOrderStatus(orderStatus);
 
         return orderRepository.save(order);
+    }
+
+    public Order abandonOrder(Long driverId){
+        List<Order> orders = orderRepository.findDriverAcceptedOrder(driverId);
+        Order order = null;
+        if (!orders.isEmpty()){
+            order = orders.get(0);
+            order.setOrderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build());
+            order.setDriver(null);
+            order = orderRepository.save(order);
+        }
+        return order;
     }
 
     public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException {
