@@ -24,7 +24,6 @@ import java.util.*;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final FoodOrderRepository foodOrderRepository;
     private final RestaurantRepository restaurantRepository;
     private final FoodOrderMapper foodOrderMapper;
     private final UserDetailsRepository userDetailsRepository;
@@ -38,7 +37,6 @@ public class OrderService {
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
-                 FoodOrderRepository foodOrderRepository,
                  RestaurantRepository restaurantRepository,
                  FoodOrderMapper foodOrderMapper,
                  LocationRepository locationRepository,
@@ -51,7 +49,6 @@ public class OrderService {
                  DriverRatingRepository driverRatingRepository) {
 
         this.orderRepository = orderRepository;
-        this.foodOrderRepository = foodOrderRepository;
         this.restaurantRepository = restaurantRepository;
         this.foodOrderMapper = foodOrderMapper;
         this.userDetailsRepository = userDetailsRepository;
@@ -65,7 +62,7 @@ public class OrderService {
     }
 
     public String locationToString(Location location) {
-        return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + " " + location.getZipCode() + ", United States";
+        return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
     }
 
     public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO) {
@@ -79,12 +76,11 @@ public class OrderService {
         hashMap.forEach((restaurantId, foodOrdersList) -> {
             Restaurant restaurant = restaurantRepository.findById(restaurantId)
                     .orElseThrow();
-
+            String[] address = cartOrderDTO.getAddress().split(", ");
             Location deliverLocation = Location.builder()
-                    .zipCode("11111")
-                    .state("Texas")
-                    .city("Houston")
-                    .street(cartOrderDTO.getAddress())
+                    .state(address[2])
+                    .city(address[1])
+                    .street(address[0])
                     .build();
 
             locationRepository.save(deliverLocation);
@@ -93,12 +89,10 @@ public class OrderService {
             payment.setStatus("succeeded");
             payment = paymentRepository.save(payment);
 
-            DistanceMatrixElement result = null;
+            DistanceMatrixElement result;
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
                 String deliveryTime = result.duration.toString();
-                //in future, check if customer location and restaurant location is more than 50 miles apart for example, or do some sort of distance check?
-                //also for driver, only view orders in his area? add story to backlog to handle this
                 String deliveryDistance = result.distance.toString();
                 Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
 
@@ -144,17 +138,6 @@ public class OrderService {
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
 
-
-        //once Elijah does location dropdown, I will add appropriate equals check
-//        DistanceMatrixElement result = getDistanceAndTime(locationToString(order.getRestaurant().getLocation()), locationToString(order.getDeliveryLocation()));
-//        String deliveryTime = result.duration.toString();
-//        String deliveryDistance = result.distance.toString();
-//        Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
-//
-//        order.setDeliveryDistance(deliveryDistance);
-//        order.setDeliveryTime(deliveryTime);
-//        order.setDeliveryPay(deliveryPay);
-
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
         order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
@@ -176,6 +159,7 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow();
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
+        revokeLoyaltyPoints(order);
 
         orderRepository.save(order);
         return orderDTOMapper.getOrderDTO(order);
@@ -238,6 +222,18 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public Order abandonOrder(Long driverId){
+        List<Order> orders = orderRepository.findDriverAcceptedOrder(driverId);
+        Order order = null;
+        if (!orders.isEmpty()){
+            order = orders.get(0);
+            order.setOrderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build());
+            order.setDriver(null);
+            order = orderRepository.save(order);
+        }
+        return order;
+    }
+
     public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException {
 
         //put as environment variable
@@ -260,7 +256,7 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public Order fulfilOrder(Long order_id) {
+    public void fulfilOrder(Long order_id) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
@@ -279,8 +275,11 @@ public class OrderService {
 
         order.setDeliveredAt(new Timestamp(System.currentTimeMillis()));
         order.setOrderStatus(orderStatus);
+        orderRepository.save(order);
+        order.getCustomer().setLoyaltyPoints((getLoyaltyPointsForOrder(order))
+                + order.getCustomer().getLoyaltyPoints());
 
-        return orderRepository.save(order);
+        userDetailsRepository.save(order.getCustomer().getUserDetails());
     }
     public Order getAcceptedOrder(Long driver_id){
         return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
@@ -288,7 +287,7 @@ public class OrderService {
 
     public DriverRating getDriverRating(Long order_id){ return driverRatingRepository.findDriverRatingByOrderId(order_id);}
 
-    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO){
+    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO) {
 
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         DriverRating rating = new DriverRating();
@@ -305,5 +304,20 @@ public class OrderService {
 
         return rating;
 
+    }
+
+    private void revokeLoyaltyPoints(Order order){
+        Customer customer = order.getCustomer();
+        Integer customerPoints = customer.getLoyaltyPoints();
+        Integer orderPoints = getLoyaltyPointsForOrder(order);
+
+        customer.setLoyaltyPoints(Math.max(0, customerPoints - orderPoints));
+        userDetailsRepository.save(order.getCustomer().getUserDetails());
+    }
+
+    private Integer getLoyaltyPointsForOrder(Order order){
+        return (int)(order.getFoodOrders().stream()
+                .map(foodOrder -> foodOrder.getMenuItem().getPrice())
+                .reduce(0F, Float::sum)/5);
     }
 }
