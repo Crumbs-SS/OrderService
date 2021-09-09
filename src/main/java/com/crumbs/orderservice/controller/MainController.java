@@ -2,10 +2,7 @@ package com.crumbs.orderservice.controller;
 
 import com.crumbs.lib.entity.CartItem;
 import com.crumbs.lib.entity.Order;
-import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.DTO.CartOrderDTO;
-import com.crumbs.orderservice.DTO.OrderDTO;
-import com.crumbs.orderservice.DTO.OrdersDTO;
+import com.crumbs.orderservice.DTO.*;
 import com.crumbs.orderservice.service.CartService;
 import com.crumbs.orderservice.service.OrderService;
 import org.springframework.data.domain.Page;
@@ -143,6 +140,14 @@ public class MainController {
     public ResponseEntity<Object> fulfilOrder(@PathVariable Long order_id){
         orderService.fulfilOrder(order_id);
         return new ResponseEntity<>("Order fulfilled", HttpStatus.OK);
+    }
+    @GetMapping("orders/{order_id}/driver/rating")
+    public ResponseEntity<Object> getDriverRating(@PathVariable Long order_id){
+        return new ResponseEntity<>(orderService.getDriverRating(order_id), HttpStatus.OK);
+    }
+    @PostMapping("orders/{order_id}/driver/rating")
+    public ResponseEntity<Object> submitDriverRating(@PathVariable Long order_id, @Validated @RequestBody RatingDTO rating){
+        return new ResponseEntity<>(orderService.submitDriverRating(order_id, rating), HttpStatus.OK);
     }
 }
 

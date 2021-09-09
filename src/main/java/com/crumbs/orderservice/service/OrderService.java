@@ -2,10 +2,7 @@ package com.crumbs.orderservice.service;
 
 import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
-import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.DTO.CartOrderDTO;
-import com.crumbs.orderservice.DTO.OrderDTO;
-import com.crumbs.orderservice.DTO.OrdersDTO;
+import com.crumbs.orderservice.DTO.*;
 import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
@@ -36,6 +33,7 @@ public class OrderService {
     private final OrderStatusRepository orderStatusRepository;
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
+    private final DriverRatingRepository driverRatingRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -47,7 +45,8 @@ public class OrderService {
                  DriverRepository driverRepository,
                  OrderStatusRepository orderStatusRepository,
                  DriverStateRepository driverStateRepository,
-                 PaymentRepository paymentRepository) {
+                 PaymentRepository paymentRepository,
+                 DriverRatingRepository driverRatingRepository) {
 
         this.orderRepository = orderRepository;
         this.restaurantRepository = restaurantRepository;
@@ -59,6 +58,7 @@ public class OrderService {
         this.orderStatusRepository = orderStatusRepository;
         this.driverStateRepository = driverStateRepository;
         this.paymentRepository = paymentRepository;
+        this.driverRatingRepository = driverRatingRepository;
     }
 
     public String locationToString(Location location) {
@@ -280,5 +280,26 @@ public class OrderService {
     }
     public Order getAcceptedOrder(Long driver_id){
         return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
+    }
+
+    public DriverRating getDriverRating(Long order_id){ return driverRatingRepository.findDriverRatingByOrderId(order_id);}
+
+    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO){
+
+        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        DriverRating rating = new DriverRating();
+
+        rating.setOrder(order);
+        rating.setDriver(order.getDriver());
+        rating.setCustomer(order.getCustomer());
+        rating.setRating(ratingDTO.getRating());
+        rating.setDescription(ratingDTO.getDescription());
+        rating = driverRatingRepository.save(rating);
+
+        order.setDriverRating(rating);
+        orderRepository.save(order);
+
+        return rating;
+
     }
 }
