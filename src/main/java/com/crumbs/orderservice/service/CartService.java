@@ -34,33 +34,29 @@ public class CartService {
     }
 
 
-    public List<CartItem> createCartItem(Long userId, CartItemDTO cartItemDTO){
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    public List<CartItem> createCartItem(String username, CartItemDTO cartItemDTO){
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         CartItem cartItem = cartItemMapper.getCartItem(cartItemDTO, user.getCustomer());
 
         cartItemRepository.save(cartItem);
-        return getCartItems(userId);
+        return getCartItems(username);
     }
 
-    public List<CartItem> getCartItems(Long userId){
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    public List<CartItem> getCartItems(String username){
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         return user.getCustomer().getCartItems();
     }
 
 
-    public void deleteCart(Long userId){
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
-
-        user.getCustomer()
-                .getCartItems()
-                .forEach(cartItemRepository::delete);
-
+    public void deleteCart(String username){
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
+        cartItemRepository.deleteAll(user.getCustomer().getCartItems());
         user.getCustomer().getCartItems().clear();
         userDetailsRepository.save(user);
     }
 
-    public List<CartItem> removeItem(Long userId, Long menuItemId){
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    public List<CartItem> removeItem(String username, Long menuItemId){
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         List<CartItem> cartItems = new ArrayList<>();
 
         user.getCustomer()

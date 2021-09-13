@@ -65,10 +65,9 @@ public class OrderService {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
     }
 
-    public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO) {
-
+    public List<Order> createOrder(String username, CartOrderDTO cartOrderDTO) {
         List<Order> ordersCreated = new ArrayList<>();
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         List<CartItemDTO> cartItems = cartOrderDTO.getCartItems();
         List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartItems);
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
@@ -114,16 +113,14 @@ public class OrderService {
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
-            } catch (InterruptedException | IOException | ApiException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException | IOException | ApiException ignored) {}
         });
 
         return ordersCreated;
     }
 
-    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest) {
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    public OrdersDTO getOrdersDTO(String username, PageRequest pageRequest) {
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         return OrdersDTO.builder()
                 .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
                 .inactiveOrders(getOrders(user, "FULFILLED", pageRequest))
@@ -170,7 +167,6 @@ public class OrderService {
         return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
     }
 
-
     private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders) {
         Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
 
@@ -200,14 +196,14 @@ public class OrderService {
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
-    synchronized public Order acceptOrder(Long driver_id, Long order_id) {
-
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
-        Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
+    synchronized public Order acceptOrder(String username, Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
+        Driver driver = Optional.of(user.getDriver()).orElseThrow();
 
         if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
-        if (orderRepository.findDriverAcceptedOrder(driver.getId()).size() > 1)
+        if (orderRepository.findDriverAcceptedOrder(username).size() > 1)
             throw new RuntimeException("Driver is already delivering an order");
 
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
@@ -218,12 +214,11 @@ public class OrderService {
 
         order.setDriver(driver);
         order.setOrderStatus(orderStatus);
-
         return orderRepository.save(order);
     }
 
-    public Order abandonOrder(Long driverId){
-        List<Order> orders = orderRepository.findDriverAcceptedOrder(driverId);
+    public Order abandonOrder(String username){
+        List<Order> orders = orderRepository.findDriverAcceptedOrder(username);
         Order order = null;
         if (!orders.isEmpty()){
             order = orders.get(0);
@@ -257,7 +252,6 @@ public class OrderService {
     }
 
     public void fulfilOrder(Long order_id) {
-
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
 
@@ -281,8 +275,8 @@ public class OrderService {
 
         userDetailsRepository.save(order.getCustomer().getUserDetails());
     }
-    public Order getAcceptedOrder(Long driver_id){
-        return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
+    public Order getAcceptedOrder(String username){
+        return orderRepository.findDriverAcceptedOrder(username).get(0);
     }
 
     public DriverRating getDriverRating(Long order_id){ return driverRatingRepository.findDriverRatingByOrderId(order_id);}
