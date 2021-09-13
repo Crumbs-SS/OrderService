@@ -80,7 +80,7 @@ public class MainController {
         return new ResponseEntity<>(cartItems, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
     @PutMapping("orders/{orderId}")
     public ResponseEntity<Object> updateOrder(
             @PathVariable Long orderId,
@@ -107,14 +107,14 @@ public class MainController {
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
     @DeleteMapping("customers/{username}/cart/{cartId}")
-    public ResponseEntity<Object> removeItem(
+    public ResponseEntity<Object> removeItemFromCart(
             @PathVariable String username,
             @PathVariable Long cartId){
         List<CartItem> cartItems = cartService.removeItem(username, cartId);
         return new ResponseEntity<>(cartItems, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
     @DeleteMapping("orders/{id}")
     public ResponseEntity<Object> deleteOrder(
             @PathVariable Long id,
@@ -124,7 +124,7 @@ public class MainController {
         return new ResponseEntity<>(orderDTO, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
     @DeleteMapping("customers/{username}/orders/{id}")
     public ResponseEntity<Object> cancelOrder(
             @PathVariable String username,
@@ -140,20 +140,20 @@ public class MainController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
-    @GetMapping("drivers/{username}/accepted-order}")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
+    @GetMapping("drivers/{username}/accepted-order")
     public ResponseEntity<Object> getAcceptedOrder(@PathVariable String username){
         Order order = orderService.getAcceptedOrder(username);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
-    @PutMapping("drivers/{username}/order/{orderId}")
-    public ResponseEntity<Object> acceptOrder(@PathVariable String username, @PathVariable Long orderId){
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
+    @PostMapping("drivers/{username}/accepted-order")
+    public ResponseEntity<Object> acceptOrder(@PathVariable String username, @RequestBody Long orderId){
         return new ResponseEntity<>(orderService.acceptOrder(username, orderId), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
     @PutMapping("drivers/{username}/order/{orderId}/pickUp")
     public ResponseEntity<Object> setPickedUpAt(
             @PathVariable Long orderId,
@@ -162,22 +162,20 @@ public class MainController {
         return new ResponseEntity<>("Set Picked Up At successful", HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
     @PutMapping("drivers/{username}/order/{orderId}")
     public ResponseEntity<Object> fulfilOrder(@PathVariable Long orderId, @PathVariable String username){
         orderService.fulfilOrder(orderId);
         return new ResponseEntity<>("Order fulfilled", HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
+    @PreAuthorize("permitAll()")
     @GetMapping("orders/{orderId}/driver-rating")
-    public ResponseEntity<Object> getDriverRating(
-            @PathVariable Long orderId,
-            @RequestHeader("Username") String username){
+    public ResponseEntity<Object> getDriverRating(@PathVariable Long orderId){
         return new ResponseEntity<>(orderService.getDriverRating(orderId), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
+    @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
     @PostMapping("orders/{orderId}/driver-rating")
     public ResponseEntity<Object> submitDriverRating(
             @PathVariable Long orderId,
@@ -186,10 +184,9 @@ public class MainController {
         return new ResponseEntity<>(orderService.submitDriverRating(orderId, rating), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
-    @PutMapping("drivers/{username}/abandon")
-    public ResponseEntity<Object> abandonOrder(
-            @PathVariable String username){
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
+    @DeleteMapping("drivers/{username}/accepted-order")
+    public ResponseEntity<Object> abandonOrder(@PathVariable String username){
         Order order = orderService.abandonOrder(username);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
