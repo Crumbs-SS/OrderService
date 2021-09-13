@@ -181,4 +181,10 @@ public class MainController {
         Order order = orderService.abandonOrder(username);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('OWNER') and #username == authentication.principal)")
+    @GetMapping("owners/{username}/restaurants/orders")
+    public ResponseEntity<Object> getPendingOrders(@PathVariable String username){
+        return new ResponseEntity<>(orderService.getPendingOrders(username), HttpStatus.OK);
+    }
 }

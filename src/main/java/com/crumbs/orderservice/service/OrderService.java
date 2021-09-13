@@ -15,6 +15,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -34,6 +35,7 @@ public class OrderService {
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
+    private final OwnerRepository ownerRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -46,7 +48,8 @@ public class OrderService {
                  OrderStatusRepository orderStatusRepository,
                  DriverStateRepository driverStateRepository,
                  PaymentRepository paymentRepository,
-                 DriverRatingRepository driverRatingRepository) {
+                 DriverRatingRepository driverRatingRepository,
+                 OwnerRepository ownerRepository) {
 
         this.orderRepository = orderRepository;
         this.restaurantRepository = restaurantRepository;
@@ -59,6 +62,7 @@ public class OrderService {
         this.driverStateRepository = driverStateRepository;
         this.paymentRepository = paymentRepository;
         this.driverRatingRepository = driverRatingRepository;
+        this.ownerRepository = ownerRepository;
     }
 
     public String locationToString(Location location) {
@@ -313,5 +317,19 @@ public class OrderService {
                 .build();
         locationRepository.save(deliveryLocation);
         return deliveryLocation;
+    }
+
+    public List<Order> getPendingOrders(String username){
+
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow(EntityNotFoundException::new);
+        Owner owner = Optional.of(user.getOwner()).orElseThrow(EntityNotFoundException::new);
+ 
+        List<Restaurant> restaurants = owner.getRestaurants();
+        List<Order> orders = new ArrayList<>();
+
+        restaurants.forEach(restaurant -> {
+            orders.addAll(orderRepository.findRestaurantPendingOrders(restaurant.getId()));
+        });
+        return orders;
     }
 }
