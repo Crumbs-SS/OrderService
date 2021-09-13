@@ -75,22 +75,14 @@ public class OrderService {
         hashMap.forEach((restaurantId, foodOrdersList) -> {
             Restaurant restaurant = restaurantRepository.findById(restaurantId)
                     .orElseThrow();
-            String[] address = cartOrderDTO.getAddress().split(", ");
-            Location deliverLocation = Location.builder()
-                    .state(address[2])
-                    .city(address[1])
-                    .street(address[0])
-                    .build();
-
-            locationRepository.save(deliverLocation);
-
             Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
             payment.setStatus("succeeded");
             payment = paymentRepository.save(payment);
 
+            Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
             DistanceMatrixElement result;
             try {
-                result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliveryLocation));
                 String deliveryTime = result.duration.toString();
                 String deliveryDistance = result.distance.toString();
                 Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
@@ -104,7 +96,7 @@ public class OrderService {
                         .phone(cartOrderDTO.getPhone())
                         .createdAt(new Timestamp(new Date().getTime()))
                         .deliverySlot(new Timestamp(new Date().getTime()))
-                        .deliveryLocation(deliverLocation)
+                        .deliveryLocation(deliveryLocation)
                         .deliveryTime(deliveryTime)
                         .deliveryDistance(deliveryDistance)
                         .deliveryPay(deliveryPay)
@@ -137,7 +129,7 @@ public class OrderService {
 
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+        order.setDeliveryLocation(getDeliveryLocation(cartOrderDTO));
 
         if (cartOrderDTO.getDeliverySlot() != null)
             order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
@@ -154,11 +146,13 @@ public class OrderService {
 
     public OrderDTO deleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
+        if ("FULFILLED".equals(order.getOrderStatus().getStatus()))
+            revokeLoyaltyPoints(order);
+
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
-        revokeLoyaltyPoints(order);
-
         orderRepository.save(order);
+
         return orderDTOMapper.getOrderDTO(order);
     }
 
@@ -184,11 +178,6 @@ public class OrderService {
         });
 
         return hashMap;
-    }
-
-    public void cancelOrder(Long order_id) {
-        orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
-        orderRepository.deleteById(order_id);
     }
 
     public List<Order> getAvailableOrders() {
@@ -313,5 +302,16 @@ public class OrderService {
         return (int)(order.getFoodOrders().stream()
                 .map(foodOrder -> foodOrder.getMenuItem().getPrice())
                 .reduce(0F, Float::sum)/5);
+    }
+
+    private Location getDeliveryLocation(CartOrderDTO cartOrderDTO){
+        String[] address = cartOrderDTO.getAddress().split(", ");
+        Location deliveryLocation = Location.builder()
+                .state(address[2])
+                .city(address[1])
+                .street(address[0])
+                .build();
+        locationRepository.save(deliveryLocation);
+        return deliveryLocation;
     }
 }

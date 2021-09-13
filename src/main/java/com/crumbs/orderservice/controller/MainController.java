@@ -85,7 +85,7 @@ public class MainController {
     public ResponseEntity<Object> updateOrder(
             @PathVariable Long orderId,
             @Validated @RequestBody CartOrderDTO cartOrderDTO,
-            @RequestHeader("Username") String username
+            @RequestHeader(value = "Username", required = false) String username
     ){
       OrderDTO orderDTO = orderService.updateOrder(cartOrderDTO, orderId);
       return new ResponseEntity<>(orderDTO, HttpStatus.NO_CONTENT);
@@ -122,15 +122,6 @@ public class MainController {
     ) {
         OrderDTO orderDTO = orderService.deleteOrder(id);
         return new ResponseEntity<>(orderDTO, HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
-    @DeleteMapping("customers/{username}/orders/{id}")
-    public ResponseEntity<Object> cancelOrder(
-            @PathVariable String username,
-            @PathVariable Long id){
-        orderService.cancelOrder(id);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
