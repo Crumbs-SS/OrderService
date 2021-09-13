@@ -41,7 +41,7 @@ public class MainController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("orders")
     public ResponseEntity<Object> getOrders(
             @RequestParam(defaultValue = "0") Integer page,
@@ -118,7 +118,7 @@ public class MainController {
     @DeleteMapping("orders/{id}")
     public ResponseEntity<Object> deleteOrder(
             @PathVariable Long id,
-            @RequestHeader("Username") String username
+            @RequestHeader(value = "Username", required = false) String username
     ) {
         OrderDTO orderDTO = orderService.deleteOrder(id);
         return new ResponseEntity<>(orderDTO, HttpStatus.OK);
