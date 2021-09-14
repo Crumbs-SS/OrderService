@@ -15,6 +15,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -34,6 +35,7 @@ public class OrderService {
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
+    private final OwnerRepository ownerRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     OrderService(OrderRepository orderRepository,
@@ -46,7 +48,8 @@ public class OrderService {
                  OrderStatusRepository orderStatusRepository,
                  DriverStateRepository driverStateRepository,
                  PaymentRepository paymentRepository,
-                 DriverRatingRepository driverRatingRepository) {
+                 DriverRatingRepository driverRatingRepository,
+                 OwnerRepository ownerRepository) {
 
         this.orderRepository = orderRepository;
         this.restaurantRepository = restaurantRepository;
@@ -59,16 +62,16 @@ public class OrderService {
         this.driverStateRepository = driverStateRepository;
         this.paymentRepository = paymentRepository;
         this.driverRatingRepository = driverRatingRepository;
+        this.ownerRepository = ownerRepository;
     }
 
     public String locationToString(Location location) {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
     }
 
-    public List<Order> createOrder(Long userId, CartOrderDTO cartOrderDTO) {
-
+    public List<Order> createOrder(String username, CartOrderDTO cartOrderDTO) {
         List<Order> ordersCreated = new ArrayList<>();
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         List<CartItemDTO> cartItems = cartOrderDTO.getCartItems();
         List<FoodOrder> foodOrders = foodOrderMapper.getFoodOrders(cartItems);
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
@@ -76,22 +79,14 @@ public class OrderService {
         hashMap.forEach((restaurantId, foodOrdersList) -> {
             Restaurant restaurant = restaurantRepository.findById(restaurantId)
                     .orElseThrow();
-            String[] address = cartOrderDTO.getAddress().split(", ");
-            Location deliverLocation = Location.builder()
-                    .state(address[2])
-                    .city(address[1])
-                    .street(address[0])
-                    .build();
-
-            locationRepository.save(deliverLocation);
-
             Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
             payment.setStatus("succeeded");
             payment = paymentRepository.save(payment);
 
+            Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
             DistanceMatrixElement result;
             try {
-                result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliverLocation));
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()), locationToString(deliveryLocation));
                 String deliveryTime = result.duration.toString();
                 String deliveryDistance = result.distance.toString();
                 Float deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
@@ -105,7 +100,7 @@ public class OrderService {
                         .phone(cartOrderDTO.getPhone())
                         .createdAt(new Timestamp(new Date().getTime()))
                         .deliverySlot(new Timestamp(new Date().getTime()))
-                        .deliveryLocation(deliverLocation)
+                        .deliveryLocation(deliveryLocation)
                         .deliveryTime(deliveryTime)
                         .deliveryDistance(deliveryDistance)
                         .deliveryPay(deliveryPay)
@@ -114,16 +109,14 @@ public class OrderService {
                 foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
                 orderRepository.save(order);
                 ordersCreated.add(order);
-            } catch (InterruptedException | IOException | ApiException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException | IOException | ApiException ignored) {}
         });
 
         return ordersCreated;
     }
 
-    public OrdersDTO getOrdersDTO(Long userId, PageRequest pageRequest) {
-        UserDetails user = userDetailsRepository.findById(userId).orElseThrow();
+    public OrdersDTO getOrdersDTO(String username, PageRequest pageRequest) {
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         return OrdersDTO.builder()
                 .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
                 .inactiveOrders(getOrders(user, "FULFILLED", pageRequest))
@@ -140,7 +133,7 @@ public class OrderService {
 
         order.setPhone(cartOrderDTO.getPhone());
         order.setPreferences(cartOrderDTO.getPreferences());
-        order.getDeliveryLocation().setStreet(cartOrderDTO.getAddress());
+        order.setDeliveryLocation(getDeliveryLocation(cartOrderDTO));
 
         if (cartOrderDTO.getDeliverySlot() != null)
             order.setDeliverySlot(cartOrderDTO.getDeliverySlot());
@@ -157,11 +150,13 @@ public class OrderService {
 
     public OrderDTO deleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
+        if ("FULFILLED".equals(order.getOrderStatus().getStatus()))
+            revokeLoyaltyPoints(order);
+
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
-        revokeLoyaltyPoints(order);
-
         orderRepository.save(order);
+
         return orderDTOMapper.getOrderDTO(order);
     }
 
@@ -169,7 +164,6 @@ public class OrderService {
         OrderStatus orderStatus = OrderStatus.builder().status(status).build();
         return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
     }
-
 
     private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders) {
         Map<Long, List<FoodOrder>> hashMap = new HashMap<>();
@@ -190,24 +184,19 @@ public class OrderService {
         return hashMap;
     }
 
-    public void cancelOrder(Long order_id) {
-        orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
-        orderRepository.deleteById(order_id);
-    }
-
     public List<Order> getAvailableOrders() {
         OrderStatus orderStatus = OrderStatus.builder().status("AWAITING_DRIVER").build();
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
-    synchronized public Order acceptOrder(Long driver_id, Long order_id) {
-
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
-        Driver driver = driverRepository.findById(driver_id).orElseThrow(NoSuchElementException::new);
+    synchronized public Order acceptOrder(String username, Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
+        Driver driver = Optional.of(user.getDriver()).orElseThrow();
 
         if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
             throw new RuntimeException("Order no longer available");
-        if (orderRepository.findDriverAcceptedOrder(driver.getId()).size() > 1)
+        if (orderRepository.findDriverAcceptedOrder(username).size() > 1)
             throw new RuntimeException("Driver is already delivering an order");
 
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
@@ -218,12 +207,11 @@ public class OrderService {
 
         order.setDriver(driver);
         order.setOrderStatus(orderStatus);
-
         return orderRepository.save(order);
     }
 
-    public Order abandonOrder(Long driverId){
-        List<Order> orders = orderRepository.findDriverAcceptedOrder(driverId);
+    public Order abandonOrder(String username){
+        List<Order> orders = orderRepository.findDriverAcceptedOrder(username);
         Order order = null;
         if (!orders.isEmpty()){
             order = orders.get(0);
@@ -257,7 +245,6 @@ public class OrderService {
     }
 
     public void fulfilOrder(Long order_id) {
-
         Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
 
@@ -281,8 +268,8 @@ public class OrderService {
 
         userDetailsRepository.save(order.getCustomer().getUserDetails());
     }
-    public Order getAcceptedOrder(Long driver_id){
-        return orderRepository.findDriverAcceptedOrder(driver_id).get(0);
+    public Order getAcceptedOrder(String username){
+        return orderRepository.findDriverAcceptedOrder(username).get(0);
     }
 
     public DriverRating getDriverRating(Long order_id){ return driverRatingRepository.findDriverRatingByOrderId(order_id);}
@@ -319,5 +306,30 @@ public class OrderService {
         return (int)(order.getFoodOrders().stream()
                 .map(foodOrder -> foodOrder.getMenuItem().getPrice())
                 .reduce(0F, Float::sum)/5);
+    }
+
+    private Location getDeliveryLocation(CartOrderDTO cartOrderDTO){
+        String[] address = cartOrderDTO.getAddress().split(", ");
+        Location deliveryLocation = Location.builder()
+                .state(address[2])
+                .city(address[1])
+                .street(address[0])
+                .build();
+        locationRepository.save(deliveryLocation);
+        return deliveryLocation;
+    }
+
+    public List<Order> getPendingOrders(String username){
+
+        UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow(EntityNotFoundException::new);
+        Owner owner = Optional.of(user.getOwner()).orElseThrow(EntityNotFoundException::new);
+ 
+        List<Restaurant> restaurants = owner.getRestaurants();
+        List<Order> orders = new ArrayList<>();
+
+        restaurants.forEach(restaurant -> {
+            orders.addAll(orderRepository.findRestaurantPendingOrders(restaurant.getId()));
+        });
+        return orders;
     }
 }

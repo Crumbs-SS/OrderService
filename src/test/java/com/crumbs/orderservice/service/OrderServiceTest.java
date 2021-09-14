@@ -76,7 +76,7 @@ class OrderServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
         CartOrderDTO cartOrderDTO = MockUtil.getCartOrderDTO();
 
-        assertEquals(orderService.createOrder(userDetails.getId(), cartOrderDTO).size(), 0);
+        assertEquals(orderService.createOrder(userDetails.getUsername(), cartOrderDTO).size(), 0);
     }
 
     @Test
@@ -88,7 +88,7 @@ class OrderServiceTest {
         Mockito.when(orderRepository.findOrderByOrderStatusAndCustomer(any(OrderStatus.class),
                 any(Customer.class), any(PageRequest.class))).thenReturn(ordersDTO.getActiveOrders());
 
-        assertEquals(orderService.getOrdersDTO(userDetails.getId(), pageRequest).getActiveOrders().getNumberOfElements(),
+        assertEquals(orderService.getOrdersDTO(userDetails.getUsername(), pageRequest).getActiveOrders().getNumberOfElements(),
                 ordersDTO.getActiveOrders().getNumberOfElements());
     }
 

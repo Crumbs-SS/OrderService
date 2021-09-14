@@ -55,7 +55,7 @@ class CartServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
         CartItemDTO cartItemDTO = MockUtil.getCartItemDTO();
 
-        assertEquals(cartService.createCartItem(userDetails.getId(), cartItemDTO).size(),
+        assertEquals(cartService.createCartItem(userDetails.getUsername(), cartItemDTO).size(),
                 userDetails.getCustomer().getCartItems().size());
     }
 
@@ -63,7 +63,7 @@ class CartServiceTest {
     void getCartItems() {
         UserDetails userDetails = MockUtil.getUserDetails();
 
-        assertEquals(cartService.getCartItems(userDetails.getId()).size(),
+        assertEquals(cartService.getCartItems(userDetails.getUsername()).size(),
                 userDetails.getCustomer().getCartItems().size());
     }
 
@@ -71,7 +71,7 @@ class CartServiceTest {
     void deleteCart() {
         UserDetails userDetails = MockUtil.getUserDetails();
 
-        cartService.deleteCart(userDetails.getId());
+        cartService.deleteCart(userDetails.getUsername());
         Mockito.verify(cartItemRepository).delete(any(CartItem.class));
     }
 
@@ -80,7 +80,7 @@ class CartServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
         MenuItem menuItem = MockUtil.getMenuItem();
 
-        assertEquals(cartService.removeItem(userDetails.getId(), menuItem.getId()).size(),
+        assertEquals(cartService.removeItem(userDetails.getUsername(), menuItem.getId()).size(),
                 userDetails.getCustomer().getCartItems().size() - 1);
 
 
