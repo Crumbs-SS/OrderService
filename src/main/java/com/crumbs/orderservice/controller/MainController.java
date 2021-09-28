@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 @Validated
 @PreAuthorize("isAuthenticated()")
+@RequestMapping("/order-service")
 public class MainController {
     private final OrderService orderService;
     private final CartService cartService;
@@ -30,7 +30,7 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @GetMapping("customers/{username}/orders")
+    @GetMapping("/customers/{username}/orders")
     public ResponseEntity<Object> getOrders(
             @PathVariable String username,
             @RequestParam(defaultValue = "0") Integer page,
@@ -42,7 +42,7 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("orders")
+    @GetMapping("/orders")
     public ResponseEntity<Object> getOrders(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue="3") Integer size,
@@ -61,7 +61,7 @@ public class MainController {
 
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @PostMapping("customers/{username}/orders")
+    @PostMapping("/customers/{username}/orders")
     public ResponseEntity<Object> createOrder(
             @Validated @RequestBody CartOrderDTO cartOrderDTO,
             @PathVariable String username){
@@ -71,7 +71,7 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @PostMapping("customers/{username}/cart")
+    @PostMapping("/customers/{username}/cart")
     public ResponseEntity<Object> addToCart(
             @Validated @RequestBody CartItemDTO cartItemDTO,
             @PathVariable String username){
@@ -81,7 +81,7 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
-    @PutMapping("orders/{orderId}")
+    @PutMapping("/orders/{orderId}")
     public ResponseEntity<Object> updateOrder(
             @PathVariable Long orderId,
             @Validated @RequestBody CartOrderDTO cartOrderDTO,
@@ -92,21 +92,21 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @GetMapping("customers/{username}/cart")
+    @GetMapping("/customers/{username}/cart")
     public ResponseEntity<Object> getCartItems(@PathVariable String username) {
         List<CartItem> cartItems = cartService.getCartItems(username);
         return new ResponseEntity<>(cartItems, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @DeleteMapping("customers/{username}/cart")
+    @DeleteMapping("/customers/{username}/cart")
     public ResponseEntity<Object> deleteCart(@PathVariable String username){
         cartService.deleteCart(username);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @DeleteMapping("customers/{username}/cart/{cartId}")
+    @DeleteMapping("/customers/{username}/cart/{cartId}")
     public ResponseEntity<Object> removeItemFromCart(
             @PathVariable String username,
             @PathVariable Long cartId){
@@ -115,7 +115,7 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('CUSTOMER') and #username == authentication.principal)")
-    @DeleteMapping("orders/{id}")
+    @DeleteMapping("/orders/{id}")
     public ResponseEntity<Object> deleteOrder(
             @PathVariable Long id,
             @RequestHeader(value = "Username", required = false) String username
@@ -125,27 +125,27 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('DRIVER') and #username == authentication.principal")
-    @GetMapping("drivers/{username}/orders/available")
+    @GetMapping("/drivers/{username}/orders/available")
     public ResponseEntity<Object> getAvailableOrders(@PathVariable String username){
         List<Order> orders = orderService.getAvailableOrders();
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
-    @GetMapping("drivers/{username}/accepted-order")
+    @GetMapping("/drivers/{username}/accepted-order")
     public ResponseEntity<Object> getAcceptedOrder(@PathVariable String username){
         Order order = orderService.getAcceptedOrder(username);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
-    @PostMapping("drivers/{username}/accepted-order")
+    @PostMapping("/drivers/{username}/accepted-order")
     public ResponseEntity<Object> acceptOrder(@PathVariable String username, @RequestBody Long orderId){
         return new ResponseEntity<>(orderService.acceptOrder(username, orderId), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
-    @PutMapping("drivers/{username}/order/{orderId}/pickUp")
+    @PutMapping("/drivers/{username}/order/{orderId}/pickUp")
     public ResponseEntity<Object> setPickedUpAt(
             @PathVariable Long orderId,
             @PathVariable String username){
@@ -154,20 +154,20 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
-    @PutMapping("drivers/{username}/order/{orderId}")
+    @PutMapping("/drivers/{username}/order/{orderId}")
     public ResponseEntity<Object> fulfilOrder(@PathVariable Long orderId, @PathVariable String username){
         orderService.fulfilOrder(orderId);
         return new ResponseEntity<>("Order fulfilled", HttpStatus.OK);
     }
 
     @PreAuthorize("permitAll()")
-    @GetMapping("orders/{orderId}/driver-rating")
+    @GetMapping("/orders/{orderId}/driver-rating")
     public ResponseEntity<Object> getDriverRating(@PathVariable Long orderId){
         return new ResponseEntity<>(orderService.getDriverRating(orderId), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
-    @PostMapping("orders/{orderId}/driver-rating")
+    @PostMapping("/orders/{orderId}/driver-rating")
     public ResponseEntity<Object> submitDriverRating(
             @PathVariable Long orderId,
             @Validated @RequestBody RatingDTO rating,
@@ -176,14 +176,14 @@ public class MainController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")
-    @DeleteMapping("drivers/{username}/accepted-order")
+    @DeleteMapping("/drivers/{username}/accepted-order")
     public ResponseEntity<Object> abandonOrder(@PathVariable String username){
         Order order = orderService.abandonOrder(username);
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('OWNER') and #username == authentication.principal)")
-    @GetMapping("owners/{username}/restaurants/orders")
+    @GetMapping("/owners/{username}/restaurants/orders")
     public ResponseEntity<Object> getPendingOrders(@PathVariable String username){
         return new ResponseEntity<>(orderService.getPendingOrders(username), HttpStatus.OK);
     }
