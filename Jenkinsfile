@@ -19,33 +19,37 @@ pipeline{
 
   stages
   {
-        /* stage("Test")
-        {
+       stage("Build")
+       {
+            steps {
+                 sh 'mvn clean install -DskipTests=true'
+            }
+       }
+       
+       stage("Test")
+       {
                 steps
                 {
                     sh 'mvn test'
+                    junit '**/target/surefire-reports/*.xml'
                 }
-                post
-                {
-                    always
-                    {
-                        junit '**//* target/surefire-reports/TEST-*.xml'
-                    }
-                }
-        } */
-//       stage('Code Analysis: Sonarqube')
-//       {
-//                   steps {
-//                       withSonarQubeEnv('SonarQube') {
-//                           sh 'mvn sonar:sonar'
-//                       }
-//                   }
-//               }
-//       stage('Await Quality Gateway') {
-//            steps {
-//                waitForQualityGate abortPipeline: true
-//                }
-//       }
+       } 
+         
+       stage('Code Analysis: Sonarqube')
+       {
+                   steps {
+                       withSonarQubeEnv('sonarqube') {
+                           sh 'mvn sonar:sonar'
+                       }
+                   }
+       }
+       stage('Await Quality Gateway') 
+       {
+            steps {
+                waitForQualityGate abortPipeline: true
+            }
+       }
+       
       stage("Package")
       {
             steps
