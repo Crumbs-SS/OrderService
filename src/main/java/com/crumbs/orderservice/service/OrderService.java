@@ -205,7 +205,7 @@ public class OrderService {
         return order;
     }
 
-    public DistanceMatrixElement getDistanceAndTime(String origin, String destination)  {
+    public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException  {
 
         //put as environment variable
         final String API_KEY = "AIzaSyBlmGGAkSVOeBCNMab09DnxefDmH4hfdt4";
@@ -214,15 +214,18 @@ public class OrderService {
         String[] origins = {origin};
         String[] destinations = {destination};
 
-        DistanceMatrix distanceMatrix = null;
-        try {
-            distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
-        } catch (ApiException | InterruptedException | IOException ignored) {}
-        DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
+        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
+        DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
 
-        if (distanceMatrix != null) {
-            distanceMatrixRows = distanceMatrix.rows;
-        }
+//        DistanceMatrix distanceMatrix = null;
+//        try {
+//            distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
+//        } catch (ApiException | InterruptedException | IOException ignored) {}
+//        DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
+//
+//        if (distanceMatrix != null) {
+//            distanceMatrixRows = distanceMatrix.rows;
+//        }
 
         return distanceMatrixRows[0].elements[0];
 
