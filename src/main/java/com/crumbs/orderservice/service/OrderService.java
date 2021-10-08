@@ -62,8 +62,13 @@ public class OrderService {
 
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
-            DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()),
-                    locationToString(deliveryLocation));
+            DistanceMatrixElement result = null;
+            try {
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()),
+                        locationToString(deliveryLocation));
+            } catch (InterruptedException e) {
+
+            }
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
@@ -217,7 +222,9 @@ public class OrderService {
         DistanceMatrix distanceMatrix = null;
         try {
             distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
-        } catch (ApiException | InterruptedException | IOException ignored) {
+        } catch (ApiException | IOException ignored) {
+        }
+        catch(InterruptedException e){
             throw new InterruptedException();
         }
         DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
