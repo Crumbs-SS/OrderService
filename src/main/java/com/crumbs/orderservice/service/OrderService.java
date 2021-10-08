@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -64,14 +63,12 @@ public class OrderService {
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
             DistanceMatrixElement result = null;
-
             try {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()),
                         locationToString(deliveryLocation));
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
 
+            }
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
@@ -228,7 +225,7 @@ public class OrderService {
         } catch (ApiException | IOException ignored) {
         }
         catch(InterruptedException e){
-            Thread.currentThread().interrupt();
+            throw new InterruptedException();
         }
         DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
 
