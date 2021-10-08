@@ -67,7 +67,7 @@ public class OrderService {
                 result = getDistanceAndTime(locationToString(restaurant.getLocation()),
                         locationToString(deliveryLocation));
             } catch (InterruptedException e) {
-
+                    Thread.currentThread().interrupt();
             } catch (ApiException e) {
 
             } catch (IOException e) {
