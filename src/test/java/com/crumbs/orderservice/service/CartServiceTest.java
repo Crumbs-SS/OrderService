@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +39,7 @@ class CartServiceTest {
         CartItem cartItem = MockUtil.getCartItem();
         CartItemDTO cartItemDTO = MockUtil.getCartItemDTO();
 
-        Mockito.when(userDetailsRepository.findById(userDetails.getId()))
+        Mockito.when(userDetailsRepository.findByUsername(userDetails.getUsername()))
                 .thenReturn(Optional.of(userDetails));
         Mockito.when(cartItemMapper.getCartItem(cartItemDTO, userDetails.getCustomer()))
                 .thenReturn(cartItem);
@@ -46,8 +48,6 @@ class CartServiceTest {
         Mockito.when(userDetailsRepository.save(userDetails)).thenReturn(userDetails);
 
         Mockito.doNothing().when(cartItemRepository).delete(any(CartItem.class));
-
-
     }
 
     @Test
@@ -72,7 +72,7 @@ class CartServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
 
         cartService.deleteCart(userDetails.getUsername());
-        Mockito.verify(cartItemRepository).delete(any(CartItem.class));
+        Mockito.verify(cartItemRepository).deleteAll(any(List.class));
     }
 
     @Test

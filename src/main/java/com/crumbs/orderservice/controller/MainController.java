@@ -157,6 +157,7 @@ public class MainController {
     @PutMapping("/drivers/{username}/order/{orderId}")
     public ResponseEntity<Object> fulfilOrder(@PathVariable Long orderId, @PathVariable String username){
         orderService.fulfilOrder(orderId);
+
         return new ResponseEntity<>("Order fulfilled", HttpStatus.OK);
     }
 

@@ -1,11 +1,10 @@
 package com.crumbs.orderservice;
 
 import com.crumbs.lib.entity.*;
-import com.crumbs.orderservice.DTO.CartItemDTO;
-import com.crumbs.orderservice.DTO.CartOrderDTO;
-import com.crumbs.orderservice.DTO.OrderDTO;
-import com.crumbs.orderservice.DTO.OrdersDTO;
+import com.crumbs.orderservice.DTO.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,14 +14,53 @@ public class MockUtil {
     public static Order getOrder(){
         return Order.builder()
                 .id(-1L)
+                .orderStatus(OrderStatus.builder().status("FULFILLED").build())
                 .deliveryLocation(getLocation())
                 .foodOrders(new ArrayList<>())
+                .customer(getOrderCustomer())
+                .deliveryPay(1F)
+                .driver(getOrderDriver())
+                .build();
+    }
+
+    public static DriverRating getDriverRating(){
+        return DriverRating.builder()
+                .rating(3)
+                .build();
+    }
+
+    public static Owner getOwner(){
+        return Owner.builder()
+                .id(-1L)
+                .restaurants(List.of(getRestaurant()))
+                .build();
+    }
+
+    public static RatingDTO getRatingDTO(){
+        return RatingDTO.builder()
+                .description("Test Stuff")
+                .rating(3)
+                .build();
+    }
+
+    private static Driver getOrderDriver() {
+        return Driver.builder()
+                .id(-1L)
+                .build();
+    }
+    // Avoids circular dependency between a customer's order and the order
+    private static Customer getOrderCustomer() {
+        return Customer.builder()
+                .id(-1L)
+                .loyaltyPoints(0)
+                .cartItems(new ArrayList<>(List.of(getCartItem())))
                 .build();
     }
 
     public static Customer getCustomer(){
         return Customer.builder()
                 .id(-1L)
+                .loyaltyPoints(0)
                 .cartItems(new ArrayList<>(List.of(getCartItem())))
                 .orders(List.of(getOrder()))
                 .build();
@@ -44,6 +82,7 @@ public class MockUtil {
     public static Restaurant getRestaurant(){
         return Restaurant.builder()
                 .name("Restaurant Test")
+                .location(getLocation())
                 .id(-1L)
                 .build();
     }
@@ -71,8 +110,9 @@ public class MockUtil {
         return CartOrderDTO.builder()
                 .cartItems(List.of(getCartItemDTO()))
                 .phone("1234567890")
-                .address("Testing Lane")
+                .address("Testing, Lane, Something")
                 .orderStatus("AWAITING_DRIVER")
+                .stripeID("StripeID")
                 .preferences("")
                 .build();
     }
@@ -81,6 +121,8 @@ public class MockUtil {
         return UserDetails.builder()
                 .id(-1L)
                 .customer(getCustomer())
+                .owner(getOwner())
+                .driver(getDriver())
                 .phone("1234567890")
                 .email("mock@gmail")
                 .firstName("Mock")
@@ -91,9 +133,15 @@ public class MockUtil {
     }
 
     public static OrdersDTO getOrdersDTO(){
+
         return OrdersDTO.builder()
-                .activeOrders(new PageImpl<>(List.of(getOrder())))
+                .activeOrders(getOrders())
+                .inactiveOrders(getOrders())
                 .build();
+    }
+
+    public static Page<Order> getOrders(){
+        return new PageImpl<>(List.of(getOrder()));
     }
 
     public static OrderDTO getOrderDTO(){
@@ -106,8 +154,29 @@ public class MockUtil {
 
     public static Location getLocation(){
         return Location.builder()
-                .street("test lane")
+                .street("test")
+                .city("lane")
+                .state("something")
                 .id(-1L)
                 .build();
     }
+
+    public static Payment getPayment() {
+        return Payment.builder()
+                .id(-1L)
+                .status("")
+                .stripeID("StripeID")
+                .amount("123")
+                .build();
+    }
+
+    public static Driver getDriver(){
+        return Driver.builder().build();
+    }
+
+    public static PageRequest getPageRequest(){
+        return PageRequest.of(0, 10);
+    }
+
+
 }
