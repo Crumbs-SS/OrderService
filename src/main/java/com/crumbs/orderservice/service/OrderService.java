@@ -9,9 +9,13 @@ import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
-import com.google.maps.model.*;
-import lombok.SneakyThrows;
-import org.springframework.data.domain.*;
+import com.google.maps.model.DistanceMatrix;
+import com.google.maps.model.DistanceMatrixElement;
+import com.google.maps.model.DistanceMatrixRow;
+import com.google.maps.model.Unit;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(rollbackFor = {Exception.class})
 public class OrderService {
 
@@ -35,32 +40,6 @@ public class OrderService {
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
-
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    OrderService(OrderRepository orderRepository,
-                 RestaurantRepository restaurantRepository,
-                 FoodOrderMapper foodOrderMapper,
-                 LocationRepository locationRepository,
-                 UserDetailsRepository userDetailsRepository,
-                 OrderDTOMapper orderDTOMapper,
-                 DriverRepository driverRepository,
-                 OrderStatusRepository orderStatusRepository,
-                 DriverStateRepository driverStateRepository,
-                 PaymentRepository paymentRepository,
-                 DriverRatingRepository driverRatingRepository) {
-
-        this.orderRepository = orderRepository;
-        this.restaurantRepository = restaurantRepository;
-        this.foodOrderMapper = foodOrderMapper;
-        this.userDetailsRepository = userDetailsRepository;
-        this.locationRepository = locationRepository;
-        this.orderDTOMapper = orderDTOMapper;
-        this.driverRepository = driverRepository;
-        this.orderStatusRepository = orderStatusRepository;
-        this.driverStateRepository = driverStateRepository;
-        this.paymentRepository = paymentRepository;
-        this.driverRatingRepository = driverRatingRepository;
-    }
 
     public String locationToString(Location location) {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
@@ -88,7 +67,7 @@ public class OrderService {
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
-            Float deliveryPay;
+            float deliveryPay;
 
             try{
                  deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
@@ -132,7 +111,6 @@ public class OrderService {
         return orderRepository.findAll(OrderSpecification.getOrdersBySearch(query, filterBy), pageRequest);
     }
 
-    @SneakyThrows
     public OrderDTO updateOrder(CartOrderDTO cartOrderDTO, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
 
@@ -284,6 +262,7 @@ public class OrderService {
 
         return order;
     }
+
     public Order getAcceptedOrder(String username){
         return orderRepository.findDriverAcceptedOrder(username).get(0);
     }

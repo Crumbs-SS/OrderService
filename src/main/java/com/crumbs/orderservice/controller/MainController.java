@@ -41,7 +41,7 @@ public class MainController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("permitAll()")
     @GetMapping("/orders")
     public ResponseEntity<Object> getOrders(
             @RequestParam(defaultValue = "0") Integer page,
