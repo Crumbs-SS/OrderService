@@ -62,8 +62,17 @@ public class OrderService {
 
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
-            DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()),
-                    locationToString(deliveryLocation));
+            DistanceMatrixElement result = null;
+            try {
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()),
+                        locationToString(deliveryLocation));
+            } catch (InterruptedException e) {
+
+            } catch (ApiException e) {
+
+            } catch (IOException e) {
+
+            }
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
