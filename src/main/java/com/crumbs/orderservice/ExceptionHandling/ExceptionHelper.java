@@ -14,8 +14,4 @@ public class ExceptionHelper {
     protected ResponseEntity<Object> handleException(NoSuchElementException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
-    @ExceptionHandler(InterruptedException.class)
-    protected ResponseEntity<Object> handleInterruptedException(NoSuchElementException ex){
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 }
