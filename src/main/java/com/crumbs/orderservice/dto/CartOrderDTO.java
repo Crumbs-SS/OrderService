@@ -1,4 +1,4 @@
-package com.crumbs.orderservice.DTO;
+package com.crumbs.orderservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.List;
 

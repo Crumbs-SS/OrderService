@@ -1,7 +1,6 @@
 package com.crumbs.orderservice.security;
 
 import com.crumbs.AuthLib.security.JwtAuthorizationFilter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,8 +19,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    private final String jwtSecret = SecretManager.getSecret("prod/crumbs/jwt-RF0MyA");
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {

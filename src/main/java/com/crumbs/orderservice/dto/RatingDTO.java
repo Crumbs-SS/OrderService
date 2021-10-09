@@ -1,4 +1,4 @@
-package com.crumbs.orderservice.DTO;
+package com.crumbs.orderservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

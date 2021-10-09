@@ -2,13 +2,13 @@ package com.crumbs.orderservice.service;
 
 import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
-import com.crumbs.orderservice.DTO.*;
+import com.crumbs.orderservice.dto.*;
 import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
+import com.crumbs.orderservice.security.SecretManager;
 import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
-import com.google.maps.errors.ApiException;
 import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.DistanceMatrixElement;
 import com.google.maps.model.DistanceMatrixRow;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -54,8 +53,8 @@ public class OrderService {
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
 
         hashMap.forEach((restaurantId, foodOrdersList) -> {
-            Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                    .orElseThrow();
+            Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow();
+
             Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
             payment.setStatus("succeeded");
             payment = paymentRepository.save(payment);
@@ -68,7 +67,6 @@ public class OrderService {
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
             float deliveryPay;
-
             try{
                  deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
             }catch(Exception ignored) {
@@ -172,7 +170,7 @@ public class OrderService {
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
-    synchronized public Order acceptOrder(String username, Long orderId) {
+    public synchronized Order acceptOrder(String username, Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
         UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         Driver driver = Optional.of(user.getDriver()).orElseThrow();
@@ -206,9 +204,7 @@ public class OrderService {
     }
 
     public DistanceMatrixElement getDistanceAndTime(String origin, String destination)  {
-
-        //put as environment variable
-        final String API_KEY = "AIzaSyBlmGGAkSVOeBCNMab09DnxefDmH4hfdt4";
+        final String API_KEY = SecretManager.getSecret("prod/crumbs/geo-BiusaT");
         final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
 
         String[] origins = {origin};
@@ -217,7 +213,7 @@ public class OrderService {
         DistanceMatrix distanceMatrix = null;
         try {
             distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
-        } catch (ApiException | InterruptedException | IOException ignored) {}
+        } catch (Exception ignored) {}
         DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
 
         if (distanceMatrix != null) {
@@ -322,10 +318,7 @@ public class OrderService {
  
         List<Restaurant> restaurants = owner.getRestaurants();
         List<Order> orders = new ArrayList<>();
-
-        restaurants.forEach(restaurant -> {
-            orders.addAll(orderRepository.findRestaurantPendingOrders(restaurant.getId()));
-        });
+        restaurants.forEach(restaurant -> orders.addAll(orderRepository.findRestaurantPendingOrders(restaurant.getId())));
         return orders;
     }
 }

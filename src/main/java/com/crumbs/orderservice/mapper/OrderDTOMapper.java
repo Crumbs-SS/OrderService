@@ -2,7 +2,7 @@ package com.crumbs.orderservice.mapper;
 
 
 import com.crumbs.lib.entity.Order;
-import com.crumbs.orderservice.DTO.OrderDTO;
+import com.crumbs.orderservice.dto.OrderDTO;
 import org.springframework.stereotype.Component;
 
 @Component

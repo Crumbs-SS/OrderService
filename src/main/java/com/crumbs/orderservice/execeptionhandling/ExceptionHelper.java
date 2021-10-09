@@ -1,4 +1,4 @@
-package com.crumbs.orderservice.ExceptionHandling;
+package com.crumbs.orderservice.execeptionhandling;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

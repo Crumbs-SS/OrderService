@@ -5,7 +5,7 @@ import com.crumbs.lib.entity.MenuItem;
 import com.crumbs.lib.entity.UserDetails;
 import com.crumbs.lib.repository.CartItemRepository;
 import com.crumbs.lib.repository.UserDetailsRepository;
-import com.crumbs.orderservice.DTO.CartItemDTO;
+import com.crumbs.orderservice.dto.CartItemDTO;
 import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.mapper.CartItemMapper;
 import org.junit.jupiter.api.BeforeEach;

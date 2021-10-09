@@ -1,4 +1,4 @@
-package com.crumbs.orderservice.DTO;
+package com.crumbs.orderservice.dto;
 
 import com.crumbs.lib.entity.*;
 import lombok.AllArgsConstructor;

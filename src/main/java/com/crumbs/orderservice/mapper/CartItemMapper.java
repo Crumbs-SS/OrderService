@@ -3,7 +3,7 @@ package com.crumbs.orderservice.mapper;
 import com.crumbs.lib.entity.CartItem;
 import com.crumbs.lib.entity.Customer;
 import com.crumbs.lib.repository.MenuItemRepository;
-import com.crumbs.orderservice.DTO.CartItemDTO;
+import com.crumbs.orderservice.dto.CartItemDTO;
 import org.springframework.stereotype.Component;
 
 @Component

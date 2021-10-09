@@ -2,10 +2,10 @@ package com.crumbs.orderservice.service;
 
 import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
-import com.crumbs.orderservice.DTO.CartOrderDTO;
-import com.crumbs.orderservice.DTO.OrderDTO;
-import com.crumbs.orderservice.DTO.OrdersDTO;
-import com.crumbs.orderservice.DTO.RatingDTO;
+import com.crumbs.orderservice.dto.CartOrderDTO;
+import com.crumbs.orderservice.dto.OrderDTO;
+import com.crumbs.orderservice.dto.OrdersDTO;
+import com.crumbs.orderservice.dto.RatingDTO;
 import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import org.junit.jupiter.api.BeforeEach;
