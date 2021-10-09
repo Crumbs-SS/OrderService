@@ -9,6 +9,7 @@ import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.crumbs.orderservice.security.SecretManager;
 import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
+import com.google.maps.errors.ApiException;
 import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.DistanceMatrixElement;
 import com.google.maps.model.DistanceMatrixRow;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -61,8 +63,15 @@ public class OrderService {
 
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
-            DistanceMatrixElement result = getDistanceAndTime(locationToString(restaurant.getLocation()),
-                    locationToString(deliveryLocation));
+            DistanceMatrixElement result = null;
+            try {
+                result = getDistanceAndTime(locationToString(restaurant.getLocation()),
+                        locationToString(deliveryLocation));
+            } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+            } catch (ApiException | IOException ignored) {}
+
+            assert result != null;
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
@@ -203,23 +212,15 @@ public class OrderService {
         return order;
     }
 
-    public DistanceMatrixElement getDistanceAndTime(String origin, String destination)  {
+    public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException  {
         final String API_KEY = SecretManager.getSecret("prod/crumbs/geo-BiusaT");
         final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
 
         String[] origins = {origin};
         String[] destinations = {destination};
 
-        DistanceMatrix distanceMatrix = null;
-        try {
-            distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
-        } catch (Exception ignored) {}
-        DistanceMatrixRow[] distanceMatrixRows = new DistanceMatrixRow[0];
-
-        if (distanceMatrix != null) {
-            distanceMatrixRows = distanceMatrix.rows;
-        }
-
+        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
+        DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
         return distanceMatrixRows[0].elements[0];
 
     }
