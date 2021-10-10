@@ -38,7 +38,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         config.setAllowedOrigins(List.of(
                 "http://crumbs-client.s3-website-us-east-1.amazonaws.com",
                 "http://crumbs-admin-bucket-01.s3-website-us-east-1.amazonaws.com",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://localhost:4200"
         ));
         config.addAllowedMethod(HttpMethod.PUT);
         config.addAllowedMethod(HttpMethod.DELETE);
