@@ -5,15 +5,20 @@ import org.springframework.data.jpa.domain.Specification;
 
 
 public class OrderSpecification  {
+    private static final String userDetails = "userDetails";
+
+    private OrderSpecification(){
+        throw new IllegalStateException("Utility class");
+    }
 
     public static Specification<Order> getOrdersByCustomerFirstName(String name){
         return (root, query, builder) -> builder.like(root.join("customer")
-                .join("userDetails").get("firstName"), "%" + name + "%");
+                .join(userDetails).get("firstName"), "%" + name + "%");
     }
 
     public static Specification<Order> getOrdersByCustomerLastName(String name){
         return (root, query, builder) -> builder.like(root.join("customer")
-                .join("userDetails").get("lastName"), "%"+name+"%");
+                .join(userDetails).get("lastName"), "%"+name+"%");
     }
 
     public static Specification<Order> getOrdersByAddress(String street){
@@ -28,12 +33,12 @@ public class OrderSpecification  {
 
     public static Specification<Order> getOrdersByDriverFirstName(String name){
         return (root, query, builder) -> builder.like(root.join("driver")
-                .join("userDetails").get("firstName"), "%"+name+"%");
+                .join(userDetails).get("firstName"), "%"+name+"%");
     }
 
     public static Specification<Order> getOrdersByDriverLastName(String name){
         return (root, query, builder) -> builder.like(root.join("driver")
-                .join("userDetails").get("lastName"), "%"+name+"%");
+                .join(userDetails).get("lastName"), "%"+name+"%");
     }
 
     public static Specification<Order> getOrdersByStatus(String status){
