@@ -10,6 +10,13 @@ pipeline{
           COMMIT_HASH = "${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
           IMG_NAME = "orderservice"
           AWS_ID = "728482858339"
+          DB_ENDPOINT = credentials('DB_ENDPOINT')
+          DB_USERNAME = credentials('DB_USERNAME')
+          DB_PASSWORD = credentials('DB_PASSWORD')
+          AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+          AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+          JWT_SECRET = credentials('JWT_SECRET')
+          GMAPS_API_KEY = credentials('prod/crumbs/geo')
   }
   tools
   {

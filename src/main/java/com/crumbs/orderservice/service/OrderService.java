@@ -6,7 +6,6 @@ import com.crumbs.orderservice.dto.*;
 import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
-import com.crumbs.orderservice.security.SecretManager;
 import com.google.maps.DistanceMatrixApi;
 import com.google.maps.GeoApiContext;
 import com.google.maps.errors.ApiException;
@@ -213,7 +212,7 @@ public class OrderService {
     }
 
     public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException  {
-        final String API_KEY = SecretManager.getSecret("prod/crumbs/geo-BiusaT");
+        final String API_KEY = System.getenv("GMAPS_API_KEY");
         final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
 
         String[] origins = {origin};
