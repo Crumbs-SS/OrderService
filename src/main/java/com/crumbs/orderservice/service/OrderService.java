@@ -99,7 +99,7 @@ public class OrderService {
                         .preferences(cartOrderDTO.getPreferences())
                         .phone(cartOrderDTO.getPhone())
                         .createdAt(new Timestamp(new Date().getTime()))
-                        .deliverySlot(new Timestamp(new Date().getTime()))
+                        .deliverySlot(cartOrderDTO.getDeliverySlot())
                         .deliveryLocation(deliveryLocation)
                         .deliveryTime(deliveryTime)
                         .deliveryDistance(deliveryDistance)
@@ -118,7 +118,7 @@ public class OrderService {
     public OrdersDTO getOrdersDTO(String username, PageRequest pageRequest) {
         UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         return OrdersDTO.builder()
-                .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
+                .activeOrders(getActiveOrders(user, pageRequest))
                 .inactiveOrders(getOrders(user, "FULFILLED", pageRequest))
                 .build();
     }
@@ -163,6 +163,10 @@ public class OrderService {
     private Page<Order> getOrders(UserDetails user, String status, PageRequest pageRequest) {
         OrderStatus orderStatus = OrderStatus.builder().status(status).build();
         return orderRepository.findOrderByOrderStatusAndCustomer(orderStatus, user.getCustomer(), pageRequest);
+    }
+
+    private Page<Order> getActiveOrders(UserDetails user, PageRequest pageRequest) {
+        return orderRepository.findActiveOrderByCustomer(user.getCustomer(), pageRequest);
     }
 
     private Map<Long, List<FoodOrder>> createHashMap(List<FoodOrder> foodOrders) {
