@@ -36,7 +36,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration().applyPermitDefaultValues();
         config.setAllowedOrigins(List.of(
-                "http://crumbs-bucket1.s3-website-us-east-1.amazonaws.com",
+                "http://crumbs-client.s3-website-us-east-1.amazonaws.com",
+                "http://crumbs-admin-bucket-01.s3-website-us-east-1.amazonaws.com",
                 "http://localhost:3000"
         ));
         // TODO: Add Admin Origin
