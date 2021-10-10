@@ -1,13 +1,9 @@
 pipeline{
-//
-//   agent {
-//                 dockerfile true
-//    }
+
      agent any
 
   environment
   {
-          COMMIT_HASH = "${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
           IMG_NAME = "orderservice"
           AWS_ID = "728482858339"
           DB_ENDPOINT = credentials('DB_ENDPOINT')
