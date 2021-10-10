@@ -41,6 +41,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
 
+
     public String locationToString(Location location) {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
     }
@@ -224,16 +225,16 @@ public class OrderService {
 
     }
 
-    public Order setPickedUpAt(Long order_id) {
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+    public Order setPickedUpAt(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
         order.setPickedUpAt(new Timestamp(System.currentTimeMillis()));
         orderRepository.save(order);
 
         return order;
     }
 
-    public Order fulfilOrder(Long order_id) {
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+    public Order fulfilOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
 
         OrderStatus orderStatus = orderStatusRepository.findById("FULFILLED").orElseThrow();
@@ -263,13 +264,13 @@ public class OrderService {
         return orderRepository.findDriverAcceptedOrder(username).get(0);
     }
 
-    public DriverRating getDriverRating(Long order_id){
-        return driverRatingRepository.findDriverRatingByOrderId(order_id);
+    public DriverRating getDriverRating(Long orderId){
+        return driverRatingRepository.findDriverRatingByOrderId(orderId);
     }
 
-    public DriverRating submitDriverRating(Long order_id, RatingDTO ratingDTO) {
+    public DriverRating submitDriverRating(Long orderId, RatingDTO ratingDTO) {
 
-        Order order = orderRepository.findById(order_id).orElseThrow(NoSuchElementException::new);
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
         DriverRating rating = new DriverRating();
 
         rating.setOrder(order);

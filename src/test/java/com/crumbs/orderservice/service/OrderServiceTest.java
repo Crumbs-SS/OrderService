@@ -109,7 +109,7 @@ class OrderServiceTest {
         String username = MockUtil.getUserDetails().getUsername();
         CartOrderDTO cartOrderDTO = MockUtil.getCartOrderDTO();
 
-        assertEquals(orderService.createOrder(username, cartOrderDTO).size(), 1);
+        assertEquals(1, orderService.createOrder(username, cartOrderDTO).size());
     }
 
     @Test
@@ -236,6 +236,6 @@ class OrderServiceTest {
         String username = MockUtil.getUserDetails().getUsername();
         Integer amountOfOrders = orderService.getPendingOrders(username).size();
 
-        assertEquals(amountOfOrders, 1);
+        assertEquals(1, amountOfOrders);
     }
 }

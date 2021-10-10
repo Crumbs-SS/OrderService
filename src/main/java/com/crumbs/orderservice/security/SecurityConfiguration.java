@@ -40,7 +40,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 "http://crumbs-admin-bucket-01.s3-website-us-east-1.amazonaws.com",
                 "http://localhost:3000"
         ));
-        // TODO: Add Admin Origin
         config.addAllowedMethod(HttpMethod.PUT);
         config.addAllowedMethod(HttpMethod.DELETE);
         source.registerCorsConfiguration("/**", config);
