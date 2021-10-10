@@ -77,7 +77,7 @@ pipeline{
           always
           {
               sh 'mvn clean'
-              sh "docker system prune -f"
+              sh "docker rmi \$(docker images --format \'{{.Repository}}:{{.Tag}}\' | grep \'${IMG_NAME}\')"
           }
   }
 
