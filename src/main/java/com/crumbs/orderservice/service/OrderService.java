@@ -14,6 +14,7 @@ import com.google.maps.model.DistanceMatrixElement;
 import com.google.maps.model.DistanceMatrixRow;
 import com.google.maps.model.Unit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = {Exception.class})
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -101,6 +103,8 @@ public class OrderService {
             foodOrdersList.forEach(foodOrder -> foodOrder.setOrder(order));
             orderRepository.save(order);
             ordersCreated.add(order);
+
+            log.info("Order was created with Id: {}", order.getId());
         });
 
         return ordersCreated;
