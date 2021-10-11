@@ -201,6 +201,8 @@ public class OrderService {
 
         order.setDriver(driver);
         order.setOrderStatus(orderStatus);
+
+        log.info("Driver with Id: {} has accepted order with Id: {}", driver.getId(), order.getId());
         return orderRepository.save(order);
     }
 
