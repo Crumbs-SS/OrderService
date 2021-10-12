@@ -147,6 +147,7 @@ public class OrderService {
         if ("FULFILLED".equals(order.getOrderStatus().getStatus()))
             revokeLoyaltyPoints(order);
 
+        order.getDriver().setState(DriverState.builder().state("AVAILABLE").build());
         OrderStatus orderStatus = OrderStatus.builder().status("DELETED").build();
         order.setOrderStatus(orderStatusRepository.save(orderStatus));
         orderRepository.save(order);
