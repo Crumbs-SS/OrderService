@@ -5,20 +5,18 @@ import com.crumbs.lib.entity.MenuItem;
 import com.crumbs.lib.entity.UserDetails;
 import com.crumbs.lib.repository.CartItemRepository;
 import com.crumbs.lib.repository.UserDetailsRepository;
-import com.crumbs.orderservice.DTO.CartItemDTO;
+import com.crumbs.orderservice.dto.CartItemDTO;
 import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.mapper.CartItemMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -37,7 +35,7 @@ class CartServiceTest {
         CartItem cartItem = MockUtil.getCartItem();
         CartItemDTO cartItemDTO = MockUtil.getCartItemDTO();
 
-        Mockito.when(userDetailsRepository.findById(userDetails.getId()))
+        Mockito.when(userDetailsRepository.findByUsername(userDetails.getUsername()))
                 .thenReturn(Optional.of(userDetails));
         Mockito.when(cartItemMapper.getCartItem(cartItemDTO, userDetails.getCustomer()))
                 .thenReturn(cartItem);
@@ -46,8 +44,6 @@ class CartServiceTest {
         Mockito.when(userDetailsRepository.save(userDetails)).thenReturn(userDetails);
 
         Mockito.doNothing().when(cartItemRepository).delete(any(CartItem.class));
-
-
     }
 
     @Test
@@ -72,7 +68,7 @@ class CartServiceTest {
         UserDetails userDetails = MockUtil.getUserDetails();
 
         cartService.deleteCart(userDetails.getUsername());
-        Mockito.verify(cartItemRepository).delete(any(CartItem.class));
+        Mockito.verify(cartItemRepository).deleteAll(any(List.class));
     }
 
     @Test

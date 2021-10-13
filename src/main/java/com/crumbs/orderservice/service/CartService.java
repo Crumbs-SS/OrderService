@@ -5,9 +5,8 @@ import com.crumbs.lib.entity.CartItem;
 import com.crumbs.lib.entity.UserDetails;
 import com.crumbs.lib.repository.CartItemRepository;
 import com.crumbs.lib.repository.UserDetailsRepository;
-import com.crumbs.orderservice.DTO.CartItemDTO;
+import com.crumbs.orderservice.dto.CartItemDTO;
 import com.crumbs.orderservice.mapper.CartItemMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +49,7 @@ public class CartService {
 
     public void deleteCart(String username){
         UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
+
         cartItemRepository.deleteAll(user.getCustomer().getCartItems());
         user.getCustomer().getCartItems().clear();
         userDetailsRepository.save(user);

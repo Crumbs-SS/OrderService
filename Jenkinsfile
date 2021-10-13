@@ -1,15 +1,18 @@
 pipeline{
-//
-//   agent {
-//                 dockerfile true
-//    }
+
      agent any
 
   environment
   {
-          COMMIT_HASH = "${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
           IMG_NAME = "orderservice"
           AWS_ID = "728482858339"
+          DB_ENDPOINT = credentials('DB_ENDPOINT')
+          DB_USERNAME = credentials('DB_USERNAME')
+          DB_PASSWORD = credentials('DB_PASSWORD')
+          AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+          AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+          JWT_SECRET = credentials('JWT_SECRET')
+          GMAPS_API_KEY = credentials('prod/crumbs/geo')
   }
   tools
   {
@@ -17,35 +20,40 @@ pipeline{
             jdk 'java'
   }
 
+
   stages
   {
-        /* stage("Test")
-        {
+       stage("Build")
+       {
+            steps {
+                 sh 'mvn clean install'
+            }
+       }
+       
+       stage("Test")
+       {
                 steps
                 {
                     sh 'mvn test'
+                    junit '**/target/surefire-reports/*.xml'
                 }
-                post
-                {
-                    always
-                    {
-                        junit '**//* target/surefire-reports/TEST-*.xml'
-                    }
-                }
-        } */
-//       stage('Code Analysis: Sonarqube')
-//       {
-//                   steps {
-//                       withSonarQubeEnv('SonarQube') {
-//                           sh 'mvn sonar:sonar'
-//                       }
-//                   }
-//               }
-//       stage('Await Quality Gateway') {
-//            steps {
-//                waitForQualityGate abortPipeline: true
-//                }
-//       }
+       } 
+         
+       stage('Code Analysis: Sonarqube')
+       {
+                   steps {
+                       withSonarQubeEnv('sonarqube') {
+                           sh 'mvn sonar:sonar'
+                       }
+                   }
+       }
+       stage('Await Quality Gateway') 
+       {
+            steps {
+                waitForQualityGate abortPipeline: false
+            }
+       }
+       
       stage("Package")
       {
             steps
@@ -57,13 +65,13 @@ pipeline{
 
           steps {
               echo "Docker Build...."
-              withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: '9fa6a41e-815d-44b2-a11d-e0dd31895396', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh "aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${AWS_ID}.dkr.ecr.us-east-2.amazonaws.com"
+              withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'jenkins_credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${AWS_ID}.dkr.ecr.us-east-1.amazonaws.com"
               }
-              sh "docker build --tag ${IMG_NAME}:${COMMIT_HASH} ."
-               sh "docker tag ${IMG_NAME}:${COMMIT_HASH} ${AWS_ID}.dkr.ecr.us-east-2.amazonaws.com/${IMG_NAME}:${COMMIT_HASH}"
+              sh "docker build -t ${IMG_NAME} ."
+               sh "docker tag ${IMG_NAME}:latest ${AWS_ID}.dkr.ecr.us-east-1.amazonaws.com/${IMG_NAME}:latest"
               echo "Docker Push..."
-               sh "docker push ${AWS_ID}.dkr.ecr.us-east-2.amazonaws.com/${IMG_NAME}:${COMMIT_HASH}"
+               sh "docker push ${AWS_ID}.dkr.ecr.us-east-1.amazonaws.com/${IMG_NAME}:latest"
           }
       }
     }
@@ -72,7 +80,7 @@ pipeline{
           always
           {
               sh 'mvn clean'
-              sh "docker system prune -f"
+              sh "docker rmi \$(docker images --format \'{{.Repository}}:{{.Tag}}\' | grep \'${IMG_NAME}\')"
           }
   }
 
