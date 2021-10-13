@@ -24,7 +24,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.addFilter(new JwtAuthorizationFilter(authenticationManager(), System.getenv("JWT_SECRET")))
                 .authorizeRequests()
-                .antMatchers("/actuator/**").permitAll()
+                .antMatchers(
+                        "/actuator/**",
+                        "/swagger-resources/**",
+                        "/swagger-ui.html",
+                        "/v2/api-docs"
+                ).permitAll()
                 .anyRequest().authenticated()
                 .and().httpBasic()
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)

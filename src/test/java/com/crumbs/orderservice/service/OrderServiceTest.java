@@ -2,32 +2,37 @@ package com.crumbs.orderservice.service;
 
 import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
+import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.dto.CartOrderDTO;
 import com.crumbs.orderservice.dto.OrderDTO;
 import com.crumbs.orderservice.dto.OrdersDTO;
 import com.crumbs.orderservice.dto.RatingDTO;
-import com.crumbs.orderservice.MockUtil;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class OrderServiceTest {
 
     @Autowired
-    OrderService orderService;
+    private OrderService orderService;
 
     @MockBean OrderRepository orderRepository;
     @MockBean FoodOrderRepository foodOrderRepository;
@@ -53,55 +58,57 @@ class OrderServiceTest {
         MenuItem menuItem = MockUtil.getMenuItem();
         Payment payment = MockUtil.getPayment();
 
-        Mockito.when(userDetailsRepository.findById(userDetails.getId()))
+        when(userDetailsRepository.findById(userDetails.getId()))
                 .thenReturn(Optional.of(userDetails));
-        Mockito.when(userDetailsRepository.findByUsername(userDetails.getUsername()))
+        when(userDetailsRepository.findByUsername(userDetails.getUsername()))
                 .thenReturn(Optional.of(userDetails));
-        Mockito.when(locationRepository.save(any(Location.class)))
+        when(locationRepository.save(any(Location.class)))
                 .thenReturn(null);
-        Mockito.when(restaurantRepository.findById(restaurant.getId()))
+        when(restaurantRepository.findById(restaurant.getId()))
                 .thenReturn(Optional.of(restaurant));
-        Mockito.when(orderRepository.save(any(Order.class)))
+        when(orderRepository.save(any(Order.class)))
                 .thenReturn(MockUtil.getOrder());
-        Mockito.when(orderRepository.findById(order.getId()))
+        when(orderRepository.findById(order.getId()))
                 .thenReturn(Optional.of(order));
-        Mockito.when(orderDTOMapper.getOrderDTO(order))
+        when(orderDTOMapper.getOrderDTO(order))
                 .thenReturn(orderDTO);
-        Mockito.when(orderStatusRepository.save(orderStatus))
+        when(orderStatusRepository.save(orderStatus))
                 .thenReturn(orderStatus);
-        Mockito.when(orderStatusRepository.findById(any(String.class)))
+        when(orderStatusRepository.findById(any(String.class)))
                 .thenReturn(Optional.of(orderStatus));
-        Mockito.when(driverStateRepository.findById(any(String.class)))
+        when(driverStateRepository.findById(any(String.class)))
                 .thenReturn(Optional.of(DriverState.builder().build()));
-        Mockito.when(userDetailsRepository.save(any(UserDetails
+        when(userDetailsRepository.save(any(UserDetails
                 .class))).thenReturn(userDetails);
-        Mockito.when(orderRepository.findDriverAcceptedOrder(any(String.class)))
+        when(orderRepository.findDriverAcceptedOrder(any(String.class)))
                 .thenReturn(List.of(order));
-        Mockito.when(driverRepository.save(any(Driver.class)))
+        when(driverRepository.save(any(Driver.class)))
                 .thenReturn(MockUtil.getDriver());
-        Mockito.when(orderRepository.findOrderByOrderStatus(any(OrderStatus.class)))
+        when(orderRepository.findOrderByOrderStatus(any(OrderStatus.class)))
                 .thenReturn(List.of(order));
-        Mockito.when(driverRatingRepository.findDriverRatingByOrderId(order.getId()))
+        when(driverRatingRepository.findDriverRatingByOrderId(order.getId()))
                 .thenReturn(MockUtil.getDriverRating());
-        Mockito.when(driverRatingRepository.save(any(DriverRating.class)))
+        when(driverRatingRepository.save(any(DriverRating.class)))
                 .thenReturn(MockUtil.getDriverRating());
-        Mockito.when(orderRepository
+        when(orderRepository
                 .findOrderByOrderStatusAndCustomer(
                         any(OrderStatus.class),
                         any(Customer.class),
                         any(PageRequest.class)))
                 .thenReturn(orderPage);
-        Mockito.when(orderRepository.findRestaurantPendingOrders(restaurant.getId()))
+        when(orderRepository.findRestaurantPendingOrders(restaurant.getId()))
                 .thenReturn(List.of(order));
-        Mockito.when(menuItemRepository.findById(menuItem.getId()))
+        when(menuItemRepository.findById(menuItem.getId()))
                 .thenReturn(Optional.of(menuItem));
 
-        Mockito.doNothing().when(foodOrderRepository).delete(any(FoodOrder.class));
-        Mockito.when(paymentRepository.findPaymentByStripeID(payment.getStripeID()))
+        doNothing().when(foodOrderRepository).delete(any(FoodOrder.class));
+        when(paymentRepository.findPaymentByStripeID(payment.getStripeID()))
                 .thenReturn(payment);
-        Mockito.when(paymentRepository.save(any(Payment.class)))
+        when(paymentRepository.save(any(Payment.class)))
                 .thenReturn(payment);
-
+        when(orderRepository.findAll(
+                ArgumentMatchers.<Specification<Order>>any(), any(Pageable.class)))
+                .thenReturn(MockUtil.getOrders());
     }
 
     @Test
@@ -133,6 +140,12 @@ class OrderServiceTest {
 
         assertEquals(orderService.updateOrder(cartOrderDTO, order.getId()).getFoodOrders().size(),
                 orderDTO.getFoodOrders().size());
+    }
+
+    @Test
+    void shouldReturnOrdersPaginated(){
+        assertEquals(1, orderService.getOrders("orders","",
+                PageRequest.of(1, 2)).getTotalElements());
     }
 
     @Test
@@ -237,5 +250,47 @@ class OrderServiceTest {
         Integer amountOfOrders = orderService.getPendingOrders(username).size();
 
         assertEquals(1, amountOfOrders);
+    }
+
+    @Test
+    void itShouldThrowRuntimeExceptionForOrder(){
+        Order fakeOrder = MockUtil.getOrder();
+        String username = MockUtil.getUserDetails().getUsername();
+        fakeOrder.setOrderStatus(OrderStatus.builder().status("FULFILLED").build());
+
+        when(orderRepository.findById(anyLong()))
+                .thenReturn(Optional.of(fakeOrder));
+
+        assertThrows(RuntimeException.class, () -> orderService.acceptOrder(username,
+                fakeOrder.getId()));
+    }
+
+    @Test
+    void itShouldThrowRuntimeExceptionForDriver(){
+        Order fakeOrder = MockUtil.getOrder();
+        String username = MockUtil.getUserDetails().getUsername();
+        fakeOrder.setOrderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build());
+
+        when(orderRepository.findById(anyLong()))
+                .thenReturn(Optional.of(fakeOrder));
+
+        when(orderRepository.findDriverAcceptedOrder(anyString()))
+                .thenReturn(List.of(fakeOrder, fakeOrder));
+
+        assertThrows(RuntimeException.class, () -> orderService.acceptOrder(username,
+                fakeOrder.getId()));
+    }
+
+    @Test
+    void itShouldSetDriverPayToOrderPay(){
+        Order order = MockUtil.getOrder();
+
+        Driver driverWithNoAdditionalPay = Driver.builder().build();
+        order.setDriver(driverWithNoAdditionalPay);
+
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.of(order));
+
+        Driver driver = orderService.fulfilOrder(order.getId()).getDriver();
+        assertEquals(order.getDeliveryPay(), driver.getTotalPay());
     }
 }
