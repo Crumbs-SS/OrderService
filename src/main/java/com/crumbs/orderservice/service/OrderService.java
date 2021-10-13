@@ -2,8 +2,8 @@ package com.crumbs.orderservice.service;
 
 import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
-import com.crumbs.orderservice.dto.*;
 import com.crumbs.orderservice.criteria.OrderSpecification;
+import com.crumbs.orderservice.dto.*;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.google.maps.DistanceMatrixApi;
@@ -81,7 +81,7 @@ public class OrderService {
             try{
                  deliveryPay = Float.parseFloat(deliveryDistance.split("mi")[0].trim()) * 0.7F;
             }catch(Exception ignored) {
-                 deliveryPay = 0F;
+                 deliveryPay = 5F;
             }
 
             Order order = Order.builder()
@@ -248,11 +248,9 @@ public class OrderService {
         DriverState driverState = driverStateRepository.findById("AVAILABLE").orElseThrow();
 
         driver.setState(driverState);
-        Float totalPay;
-        if(driver.getTotalPay() != null)
-            totalPay = driver.getTotalPay() + order.getDeliveryPay();
-        else
-            totalPay = order.getDeliveryPay();
+        Float totalPay = (driver.getTotalPay() != null) ? driver.getTotalPay() + order.getDeliveryPay()
+                : order.getDeliveryPay();
+
         driver.setTotalPay(totalPay);
         driverRepository.save(driver);
 

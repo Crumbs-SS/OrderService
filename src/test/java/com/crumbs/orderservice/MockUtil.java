@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,7 @@ public class MockUtil {
     private static Driver getOrderDriver() {
         return Driver.builder()
                 .id(-1L)
+                .totalPay(0F)
                 .build();
     }
     // Avoids circular dependency between a customer's order and the order
@@ -111,12 +113,13 @@ public class MockUtil {
 
     public static CartOrderDTO getCartOrderDTO(){
         return CartOrderDTO.builder()
-                .cartItems(List.of(getCartItemDTO()))
+                .cartItems(List.of(getCartItemDTO(), getCartItemDTO(), getCartItemDTO()))
                 .phone("1234567890")
                 .address("Testing, Lane, Something")
                 .orderStatus("AWAITING_DRIVER")
                 .stripeID("StripeID")
                 .preferences("")
+                .deliverySlot(new Timestamp(12348565L))
                 .build();
     }
 
@@ -174,7 +177,7 @@ public class MockUtil {
     }
 
     public static Driver getDriver(){
-        return Driver.builder().build();
+        return Driver.builder().totalPay(5F).build();
     }
 
     public static PageRequest getPageRequest(){
@@ -184,6 +187,7 @@ public class MockUtil {
     public  static String createMockJWT(String role){
         final long EXPIRATION_TIME = 900_000;
         String token;
+
         Algorithm algorithm = Algorithm.HMAC256(System.getenv("JWT_SECRET"));
         token = JWT.create()
                 .withAudience("crumbs")
