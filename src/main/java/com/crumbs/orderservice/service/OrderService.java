@@ -56,13 +56,12 @@ public class OrderService {
 
         Map<Long, List<FoodOrder>> hashMap = createHashMap(foodOrders);
 
+        final Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
+        payment.setStatus("succeeded");
+        paymentRepository.save(payment);
+
         hashMap.forEach((restaurantId, foodOrdersList) -> {
             Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow();
-
-            Payment payment = paymentRepository.findPaymentByStripeID(cartOrderDTO.getStripeID());
-            payment.setStatus("succeeded");
-            payment = paymentRepository.save(payment);
-
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
             DistanceMatrixElement result = null;
