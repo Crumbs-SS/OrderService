@@ -167,6 +167,12 @@ public class MainController {
         return new ResponseEntity<>(orderService.getDriverRating(orderId), HttpStatus.OK);
     }
 
+    @PreAuthorize("permitAll()")
+    @GetMapping("/orders/{orderId}/restaurant-rating")
+    public ResponseEntity<Object> getRestaurantRating(@PathVariable Long orderId){
+        return new ResponseEntity<>(orderService.getRestaurantRating(orderId), HttpStatus.OK);
+    }
+
     @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
     @PostMapping("/orders/{orderId}/driver-rating")
     public ResponseEntity<Object> submitDriverRating(
@@ -174,6 +180,15 @@ public class MainController {
             @Validated @RequestBody RatingDTO rating,
             @RequestHeader("Username") String username){
         return new ResponseEntity<>(orderService.submitDriverRating(orderId, rating), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('CUSTOMER') and #username == authentication.principal")
+    @PostMapping("/orders/{orderId}/restaurant-rating")
+    public ResponseEntity<Object> submitRestaurantRating(
+            @PathVariable Long orderId,
+            @Validated @RequestBody RatingDTO rating,
+            @RequestHeader("Username") String username){
+        return new ResponseEntity<>(orderService.submitRestaurantRating(orderId, rating), HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('DRIVER') and #username == authentication.principal)")

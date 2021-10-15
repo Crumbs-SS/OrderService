@@ -43,6 +43,7 @@ public class OrderService {
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
+    private final RestaurantRatingRepository restaurantRatingRepository;
     private static final String AWAITING_DRIVER_STATUS = "AWAITING_DRIVER";
     private static final String FULFILLED_STATUS = "FULFILLED";
 
@@ -246,7 +247,7 @@ public class OrderService {
         Driver driver = order.getDriver();
 
         OrderStatus orderStatus = orderStatusRepository.findById(FULFILLED_STATUS).orElseThrow();
-        DriverState driverState = driverStateRepository.findById(AWAITING_DRIVER_STATUS).orElseThrow();
+        DriverState driverState = driverStateRepository.findById("AVAILABLE").orElseThrow();
 
         driver.setState(driverState);
         Float totalPay = (driver.getTotalPay() != null) ? driver.getTotalPay() + order.getDeliveryPay()
@@ -273,20 +274,43 @@ public class OrderService {
     public DriverRating getDriverRating(Long orderId){
         return driverRatingRepository.findDriverRatingByOrderId(orderId);
     }
+    public RestaurantRating getRestaurantRating(Long orderId){
+        return restaurantRatingRepository.findRestaurantRatingByOrderId(orderId);
+    }
 
     public DriverRating submitDriverRating(Long orderId, RatingDTO ratingDTO) {
 
         Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
-        DriverRating rating = new DriverRating();
+        DriverRating rating = DriverRating
+                .builder()
+                .order(order)
+                .customer(order.getCustomer())
+                .driver(order.getDriver())
+                .rating(ratingDTO.getRating())
+                .description(ratingDTO.getDescription())
+                .build();
 
-        rating.setOrder(order);
-        rating.setDriver(order.getDriver());
-        rating.setCustomer(order.getCustomer());
-        rating.setRating(ratingDTO.getRating());
-        rating.setDescription(ratingDTO.getDescription());
-        driverRatingRepository.save(rating);
+        rating = driverRatingRepository.save(rating);
 
         order.setDriverRating(rating);
+        orderRepository.save(order);
+
+        return rating;
+    }
+
+    public RestaurantRating submitRestaurantRating(Long orderId, RatingDTO ratingDTO) {
+
+        Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
+        RestaurantRating rating = RestaurantRating
+                .builder()
+                .rating(ratingDTO.getRating())
+                .description(ratingDTO.getDescription())
+                .order(order)
+                .restaurant(order.getRestaurant())
+                .build();
+        rating = restaurantRatingRepository.save(rating);
+
+        order.setRestaurantRating(rating);
         orderRepository.save(order);
 
         return rating;
