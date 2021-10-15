@@ -247,7 +247,7 @@ public class OrderService {
         Driver driver = order.getDriver();
 
         OrderStatus orderStatus = orderStatusRepository.findById(FULFILLED_STATUS).orElseThrow();
-        DriverState driverState = driverStateRepository.findById(AWAITING_DRIVER_STATUS).orElseThrow();
+        DriverState driverState = driverStateRepository.findById("AVAILABLE").orElseThrow();
 
         driver.setState(driverState);
         Float totalPay = (driver.getTotalPay() != null) ? driver.getTotalPay() + order.getDeliveryPay()
