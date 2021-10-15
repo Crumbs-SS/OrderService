@@ -4,6 +4,7 @@ import com.crumbs.lib.entity.*;
 import com.crumbs.lib.repository.*;
 import com.crumbs.orderservice.criteria.OrderSpecification;
 import com.crumbs.orderservice.dto.*;
+import com.crumbs.orderservice.execeptionhandling.ExceptionHelper;
 import com.crumbs.orderservice.mapper.FoodOrderMapper;
 import com.crumbs.orderservice.mapper.OrderDTOMapper;
 import com.google.maps.DistanceMatrixApi;
@@ -42,7 +43,8 @@ public class OrderService {
     private final DriverStateRepository driverStateRepository;
     private final PaymentRepository paymentRepository;
     private final DriverRatingRepository driverRatingRepository;
-
+    private static final String AWAITING_DRIVER_STATUS = "AWAITING_DRIVER";
+    private static final String FULFILLED_STATUS = "FULFILLED";
 
     public String locationToString(Location location) {
         return location.getStreet() + ", " + location.getCity() + ", " + location.getState() + ", United States";
@@ -87,7 +89,7 @@ public class OrderService {
             Order order = Order.builder()
                     .restaurant(restaurant)
                     .customer(user.getCustomer())
-                    .orderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build())
+                    .orderStatus(OrderStatus.builder().status(AWAITING_DRIVER_STATUS).build())
                     .foodOrders(foodOrdersList)
                     .preferences(cartOrderDTO.getPreferences())
                     .phone(cartOrderDTO.getPhone())
@@ -113,8 +115,8 @@ public class OrderService {
     public OrdersDTO getOrdersDTO(String username, PageRequest pageRequest) {
         UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         return OrdersDTO.builder()
-                .activeOrders(getOrders(user, "AWAITING_DRIVER", pageRequest))
-                .inactiveOrders(getOrders(user, "FULFILLED", pageRequest))
+                .activeOrders(getOrders(user, AWAITING_DRIVER_STATUS, pageRequest))
+                .inactiveOrders(getOrders(user, FULFILLED_STATUS, pageRequest))
                 .build();
     }
 
@@ -144,7 +146,7 @@ public class OrderService {
 
     public OrderDTO deleteOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow();
-        if ("FULFILLED".equals(order.getOrderStatus().getStatus()))
+        if (FULFILLED_STATUS.equals(order.getOrderStatus().getStatus()))
             revokeLoyaltyPoints(order);
 
         order.getDriver().setState(DriverState.builder().state("AVAILABLE").build());
@@ -180,7 +182,7 @@ public class OrderService {
     }
 
     public List<Order> getAvailableOrders() {
-        OrderStatus orderStatus = OrderStatus.builder().status("AWAITING_DRIVER").build();
+        OrderStatus orderStatus = OrderStatus.builder().status(AWAITING_DRIVER_STATUS).build();
         return orderRepository.findOrderByOrderStatus(orderStatus);
     }
 
@@ -189,10 +191,10 @@ public class OrderService {
         UserDetails user = userDetailsRepository.findByUsername(username).orElseThrow();
         Driver driver = Optional.of(user.getDriver()).orElseThrow();
 
-        if (!order.getOrderStatus().getStatus().equals("AWAITING_DRIVER"))
-            throw new RuntimeException("Order no longer available");
+        if (!order.getOrderStatus().getStatus().equals(AWAITING_DRIVER_STATUS))
+            throw new ExceptionHelper.OrderNoLongerAvailableException();
         if (orderRepository.findDriverAcceptedOrder(username).size() > 1)
-            throw new RuntimeException("Driver is already delivering an order");
+            throw new ExceptionHelper.BusyDriverException();
 
         OrderStatus orderStatus = orderStatusRepository.findById("DELIVERING").orElseThrow();
         DriverState driverState = driverStateRepository.findById("BUSY").orElseThrow();
@@ -212,7 +214,7 @@ public class OrderService {
         Order order = null;
         if (!orders.isEmpty()){
             order = orders.get(0);
-            order.setOrderStatus(OrderStatus.builder().status("AWAITING_DRIVER").build());
+            order.setOrderStatus(OrderStatus.builder().status(AWAITING_DRIVER_STATUS).build());
             order.setDriver(null);
             orderRepository.save(order);
         }
@@ -244,8 +246,8 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow(NoSuchElementException::new);
         Driver driver = order.getDriver();
 
-        OrderStatus orderStatus = orderStatusRepository.findById("FULFILLED").orElseThrow();
-        DriverState driverState = driverStateRepository.findById("AVAILABLE").orElseThrow();
+        OrderStatus orderStatus = orderStatusRepository.findById(FULFILLED_STATUS).orElseThrow();
+        DriverState driverState = driverStateRepository.findById(AWAITING_DRIVER_STATUS).orElseThrow();
 
         driver.setState(driverState);
         Float totalPay = (driver.getTotalPay() != null) ? driver.getTotalPay() + order.getDeliveryPay()
