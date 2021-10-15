@@ -307,7 +307,6 @@ public class OrderService {
                 .description(ratingDTO.getDescription())
                 .order(order)
                 .restaurant(order.getRestaurant())
-                .customer(order.getCustomer())
                 .build();
         rating = restaurantRatingRepository.save(rating);
 
