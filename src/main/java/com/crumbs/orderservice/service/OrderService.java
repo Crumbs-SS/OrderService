@@ -67,15 +67,12 @@ public class OrderService {
             Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow();
             Location deliveryLocation = getDeliveryLocation(cartOrderDTO);
 
-            DistanceMatrixElement result = null;
-            try {
-                result = getDistanceAndTime(locationToString(restaurant.getLocation()),
-                        locationToString(deliveryLocation));
-            } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-            } catch (ApiException | IOException ignored) {}
+            DistanceMatrixDTO distanceMatrixDTO = DistanceMatrixDTO.builder()
+                    .origin(locationToString(restaurant.getLocation()))
+                    .destination(locationToString(deliveryLocation))
+                    .build();
 
-            assert result != null;
+            DistanceMatrixElement result = getDistanceAndTime(distanceMatrixDTO);
 
             String deliveryTime = result.duration.toString();
             String deliveryDistance = result.distance.toString();
@@ -221,14 +218,20 @@ public class OrderService {
         return order;
     }
 
-    public DistanceMatrixElement getDistanceAndTime(String origin, String destination) throws InterruptedException, ApiException, IOException  {
+    public DistanceMatrixElement getDistanceAndTime(DistanceMatrixDTO distanceMatrixDTO) {
         final String API_KEY = System.getenv("GMAPS_API_KEY");
         final GeoApiContext context = new GeoApiContext.Builder().apiKey(API_KEY).build();
 
-        String[] origins = {origin};
-        String[] destinations = {destination};
+        String[] origins = {distanceMatrixDTO.getOrigin()};
+        String[] destinations = {distanceMatrixDTO.getDestination()};
 
-        DistanceMatrix distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
+        DistanceMatrix distanceMatrix;
+        try {
+            distanceMatrix = DistanceMatrixApi.getDistanceMatrix(context, origins, destinations).units(Unit.IMPERIAL).await();
+        } catch (ApiException | IOException | InterruptedException e) {
+            throw new ExceptionHelper.DistanceMatrixException();
+        }
+
         DistanceMatrixRow[] distanceMatrixRows = distanceMatrix.rows;
         return distanceMatrixRows[0].elements[0];
 

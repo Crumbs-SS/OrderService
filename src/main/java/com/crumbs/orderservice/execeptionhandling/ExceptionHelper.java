@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -16,6 +17,7 @@ public class ExceptionHelper {
     private static final String MESSAGE = "message";
     public static class BusyDriverException extends RuntimeException{ }
     public static class OrderNoLongerAvailableException extends RuntimeException{ }
+    public static class DistanceMatrixException extends RuntimeException{ };
 
     @ExceptionHandler(NoSuchElementException.class)
     protected ResponseEntity<Object> handleException(NoSuchElementException ex){
@@ -29,6 +31,14 @@ public class ExceptionHelper {
         body.put(MESSAGE, "Driver is already delivering an order");
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(DistanceMatrixException.class)
+    public ResponseEntity<Object> handleException(){
+        Map<String, Object> body = new HashMap<>();
+        body.put(MESSAGE, "DistanceMatrixAPI service isn't available");
+        return new ResponseEntity<>(body, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
     @ExceptionHandler(OrderNoLongerAvailableException.class)
     public ResponseEntity<Object> handleOrderUnavailableException(){
         Map<String, Object> body = new LinkedHashMap<>();

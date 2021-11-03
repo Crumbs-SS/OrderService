@@ -5,6 +5,7 @@ import com.crumbs.lib.entity.Order;
 import com.crumbs.orderservice.dto.*;
 import com.crumbs.orderservice.service.CartService;
 import com.crumbs.orderservice.service.OrderService;
+import com.google.maps.model.DistanceMatrixElement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -202,5 +203,12 @@ public class MainController {
     @GetMapping("/owners/{username}/restaurants/orders")
     public ResponseEntity<Object> getPendingOrders(@PathVariable String username){
         return new ResponseEntity<>(orderService.getPendingOrders(username), HttpStatus.OK);
+    }
+
+    @PreAuthorize("permitAll()")
+    @PostMapping("/")
+    public ResponseEntity<Object> getDistanceMatrixElement(@RequestBody DistanceMatrixDTO distanceMatrixDTO){
+        DistanceMatrixElement distanceMatrixElement = orderService.getDistanceAndTime(distanceMatrixDTO);
+        return new ResponseEntity<>(distanceMatrixElement, HttpStatus.OK);
     }
 }
